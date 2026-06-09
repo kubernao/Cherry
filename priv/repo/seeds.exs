@@ -1,3 +1,12 @@
+if Mix.env() == :prod and
+     (System.get_env("OWNER_EMAIL") in [nil, "", "owner@example.com"] or
+        System.get_env("OWNER_PASSWORD") in [nil, "", "change-me-now!"]) do
+  raise """
+  Refusing to seed production with missing or default owner credentials.
+  Set OWNER_EMAIL and OWNER_PASSWORD to private values.
+  """
+end
+
 owner =
   Cherry.Accounts.ensure_owner!(%{
     email: System.get_env("OWNER_EMAIL") || "owner@example.com",

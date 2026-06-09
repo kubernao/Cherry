@@ -11,7 +11,7 @@ mix phx.server
 
 Open [localhost:4000](http://localhost:4000).
 
-The seed script creates the owner account and prints an initial API token:
+For local development, the seed script creates the owner account and prints an initial API token:
 
 ```txt
 email: owner@example.com
@@ -23,6 +23,8 @@ Override those before setup when needed:
 ```sh
 OWNER_EMAIL=you@example.com OWNER_PASSWORD='a-long-private-password' mix ecto.setup
 ```
+
+Production seeding refuses missing or default owner credentials.
 
 ## CLI
 
@@ -51,7 +53,7 @@ Common commands:
 ./cherry activity
 ```
 
-Use `--json` on read/write commands when agents need machine-readable output. CLI config is stored at `~/.config/cherry/config.json`; tests and automation can override it with `CHERRY_CONFIG_PATH`.
+Use `--json` on read/write commands when agents need machine-readable output. CLI config is stored at `~/.config/cherry/config.json` with user-only file permissions; tests and automation can override it with `CHERRY_CONFIG_PATH`.
 
 ## API
 
@@ -88,6 +90,20 @@ DATABASE_PATH=/data/cherry.db
 ```
 
 SQLite runs with WAL enabled. Mount a persistent disk at the directory containing `DATABASE_PATH`.
+
+Create the first production owner account from runtime environment variables:
+
+```sh
+OWNER_EMAIL=you@example.com OWNER_PASSWORD='a-long-private-password' /app/bin/cherry eval 'Cherry.Release.bootstrap_owner()'
+```
+
+For Fly.io:
+
+```sh
+fly ssh console -a cherry-kubernao -C "env OWNER_EMAIL=you@example.com OWNER_PASSWORD='a-long-private-password' /app/bin/cherry eval 'Cherry.Release.bootstrap_owner()'"
+```
+
+Save the printed token for CLI access. The bootstrap command refuses default credentials and will not create another owner if one already exists.
 
 Create backups with:
 

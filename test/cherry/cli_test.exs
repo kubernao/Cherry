@@ -28,6 +28,9 @@ defmodule Cherry.CLITest do
 
     assert %{"url" => "http://localhost:4000", "token" => "cherry_test"} =
              path |> File.read!() |> Jason.decode!()
+
+    assert {:ok, %{mode: mode}} = File.stat(path)
+    assert Bitwise.band(mode, 0o777) == 0o600
   end
 
   test "reports missing config before API commands" do

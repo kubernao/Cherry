@@ -21,11 +21,14 @@ defmodule Cherry.CLI do
     with url when is_binary(url) <- opts[:url] || {:error, "missing --url"},
          token when is_binary(token) <- opts[:token] || {:error, "missing --token"} do
       File.mkdir_p!(config_dir())
+      File.chmod(config_dir(), 0o700)
 
       File.write!(
         config_path(),
         Jason.encode!(%{url: String.trim_trailing(url, "/"), token: token}, pretty: true)
       )
+
+      File.chmod!(config_path(), 0o600)
 
       {:ok, "Saved Cherry CLI credentials to #{config_path()}"}
     else

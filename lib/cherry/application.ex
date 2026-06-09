@@ -12,6 +12,7 @@ defmodule Cherry.Application do
       Cherry.Repo,
       {Ecto.Migrator,
        repos: Application.fetch_env!(:cherry, :ecto_repos), skip: skip_migrations?()},
+      Cherry.RateLimit,
       {DNSCluster, query: Application.get_env(:cherry, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Cherry.PubSub},
       # Start a worker by calling: Cherry.Worker.start_link(arg)

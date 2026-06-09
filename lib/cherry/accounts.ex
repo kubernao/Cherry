@@ -30,6 +30,10 @@ defmodule Cherry.Accounts do
     end
   end
 
+  def owner_exists? do
+    Repo.exists?(from u in User, limit: 1)
+  end
+
   def authenticate_user(email, password) do
     user = get_user_by_email(email || "")
 
