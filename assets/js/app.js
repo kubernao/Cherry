@@ -206,7 +206,7 @@ const Hooks = {
         if(!card || !this.el.contains(card) || event.target.closest("button, input, textarea, select, a, [data-no-drag]")) return
 
         event.preventDefault()
-        this.pushEvent("edit_task", {task_id: card.dataset.taskId})
+        this.pushEvent("view_task", {task_id: card.dataset.taskId})
       }
 
       this.el.addEventListener("dblclick", this.handleCardDoubleClick)

@@ -13,6 +13,7 @@ defmodule CherryWeb.ProjectLive do
      |> assign(:view, :board)
      |> assign(:active_modal, nil)
      |> assign(:project_menu_open?, false)
+     |> assign(:viewing_task, nil)
      |> assign(:editing_task, nil)
      |> assign(:edit_task_form, nil)
      |> assign(:task_form, task_form(project))
@@ -61,6 +62,7 @@ defmodule CherryWeb.ProjectLive do
      assign(socket,
        active_modal: nil,
        project_menu_open?: false,
+       viewing_task: nil,
        editing_task: nil,
        edit_task_form: nil,
        editing_column_id: nil,
@@ -159,8 +161,22 @@ defmodule CherryWeb.ProjectLive do
      assign(socket,
        active_modal: :edit_task,
        project_menu_open?: false,
+       viewing_task: nil,
        editing_task: task,
        edit_task_form: edit_task_form(task)
+     )}
+  end
+
+  def handle_event("view_task", %{"task_id" => task_id}, socket) do
+    task = Workspace.get_task!(task_id)
+
+    {:noreply,
+     assign(socket,
+       active_modal: :view_task,
+       project_menu_open?: false,
+       viewing_task: task,
+       editing_task: nil,
+       edit_task_form: nil
      )}
   end
 
@@ -174,7 +190,7 @@ defmodule CherryWeb.ProjectLive do
       {:ok, _task} ->
         {:noreply,
          socket
-         |> assign(active_modal: nil, editing_task: nil, edit_task_form: nil)
+         |> assign(active_modal: nil, viewing_task: nil, editing_task: nil, edit_task_form: nil)
          |> load_board()}
 
       {:error, changeset} ->
@@ -548,7 +564,7 @@ defmodule CherryWeb.ProjectLive do
                     id={"task-#{task.id}-body"}
                     class="mt-2 min-h-6 line-clamp-3 text-sm leading-6 text-stone-600 dark:text-stone-300"
                   >
-                    {task.body || "Double-click to edit task"}
+                    {task.body || "Double-click to view task"}
                   </p>
 
                   <div class="mt-3 flex flex-wrap items-center gap-2 text-xs text-stone-500 dark:text-stone-400">
@@ -677,6 +693,7 @@ defmodule CherryWeb.ProjectLive do
                       name={
                         case @active_modal do
                           :new_task -> "hero-plus"
+                          :view_task -> "hero-document-magnifying-glass"
                           :edit_task -> "hero-pencil-square"
                           :columns -> "hero-view-columns"
                           :notes -> "hero-document-text"
@@ -694,6 +711,8 @@ defmodule CherryWeb.ProjectLive do
                       <%= case @active_modal do %>
                         <% :new_task -> %>
                           New task
+                        <% :view_task -> %>
+                          Task details
                         <% :edit_task -> %>
                           Edit task
                         <% :columns -> %>
@@ -708,6 +727,8 @@ defmodule CherryWeb.ProjectLive do
                       <%= case @active_modal do %>
                         <% :new_task -> %>
                           Capture the work, place it on the board, and add the context needed to move it forward.
+                        <% :view_task -> %>
+                          Review the complete task content before deciding what needs to change.
                         <% :edit_task -> %>
                           Update the task details, board placement, priority, due date, and tags in one place.
                         <% :columns -> %>
@@ -811,6 +832,116 @@ defmodule CherryWeb.ProjectLive do
                   </button>
                 </div>
               </.form>
+            </div>
+
+            <div
+              :if={@active_modal == :view_task}
+              id="view-task-modal"
+              class="max-h-[calc(88vh-8.5rem)] overflow-y-auto"
+            >
+              <div :if={@viewing_task} class="grid gap-0 lg:grid-cols-[minmax(0,1fr)_20rem]">
+                <div class="space-y-5 p-6">
+                  <div>
+                    <p class="text-xs font-semibold uppercase text-stone-500 dark:text-stone-400">
+                      Task
+                    </p>
+                    <h3
+                      id={"view-task-#{@viewing_task.id}-title"}
+                      class="mt-1 text-2xl font-semibold tracking-normal text-stone-950 dark:text-stone-50"
+                    >
+                      {@viewing_task.title}
+                    </h3>
+                  </div>
+
+                  <div
+                    id={"view-task-#{@viewing_task.id}-body"}
+                    class="min-h-48 max-w-none rounded-xl border border-stone-200 bg-stone-50/80 p-4 text-sm leading-6 text-stone-700 dark:border-stone-800 dark:bg-stone-950/60 dark:text-stone-300 [&_code]:dark:bg-stone-800 [&_h1]:mb-2 [&_h1]:text-lg [&_h1]:font-semibold [&_h1]:text-stone-950 dark:[&_h1]:text-stone-50 [&_h2]:mb-2 [&_h2]:font-semibold [&_h2]:text-stone-950 dark:[&_h2]:text-stone-50 [&_h3]:mb-2 [&_h3]:font-semibold [&_h3]:text-stone-950 dark:[&_h3]:text-stone-50 [&_p]:mb-3 [&_p]:text-stone-700 dark:[&_p]:text-stone-300 [&_strong]:font-semibold [&_strong]:text-stone-900 dark:[&_strong]:text-stone-100"
+                  >
+                    <%= if @viewing_task.body in [nil, ""] do %>
+                      <p class="text-sm text-stone-500 dark:text-stone-400">No notes yet.</p>
+                    <% else %>
+                      {Markdown.render(@viewing_task.body)}
+                    <% end %>
+                  </div>
+                </div>
+
+                <aside class="space-y-4 border-t border-stone-100 bg-stone-50/70 p-6 dark:border-stone-800 dark:bg-stone-950/40 lg:border-l lg:border-t-0">
+                  <div>
+                    <h3 class="text-sm font-semibold text-stone-950 dark:text-stone-50">
+                      Task settings
+                    </h3>
+                    <p class="mt-1 text-xs leading-5 text-stone-500 dark:text-stone-400">
+                      Current board placement and scheduling details.
+                    </p>
+                  </div>
+
+                  <dl id="view-task-meta" class="space-y-3 text-sm">
+                    <div class="rounded-lg border border-stone-200 bg-white/80 p-3 dark:border-stone-800 dark:bg-stone-900/80">
+                      <dt class="text-xs font-semibold uppercase text-stone-500 dark:text-stone-400">
+                        Column
+                      </dt>
+                      <dd class="mt-1 font-medium text-stone-950 dark:text-stone-50">
+                        {@viewing_task.column.name}
+                      </dd>
+                    </div>
+                    <div class="rounded-lg border border-stone-200 bg-white/80 p-3 dark:border-stone-800 dark:bg-stone-900/80">
+                      <dt class="text-xs font-semibold uppercase text-stone-500 dark:text-stone-400">
+                        Priority
+                      </dt>
+                      <dd class="mt-1 font-medium capitalize text-stone-950 dark:text-stone-50">
+                        {@viewing_task.priority}
+                      </dd>
+                    </div>
+                    <div class="rounded-lg border border-stone-200 bg-white/80 p-3 dark:border-stone-800 dark:bg-stone-900/80">
+                      <dt class="text-xs font-semibold uppercase text-stone-500 dark:text-stone-400">
+                        Status
+                      </dt>
+                      <dd class="mt-1 font-medium capitalize text-stone-950 dark:text-stone-50">
+                        {String.replace(@viewing_task.status, "_", " ")}
+                      </dd>
+                    </div>
+                    <div class="rounded-lg border border-stone-200 bg-white/80 p-3 dark:border-stone-800 dark:bg-stone-900/80">
+                      <dt class="text-xs font-semibold uppercase text-stone-500 dark:text-stone-400">
+                        Due date
+                      </dt>
+                      <dd class="mt-1 font-medium text-stone-950 dark:text-stone-50">
+                        {@viewing_task.due_date || "None"}
+                      </dd>
+                    </div>
+                  </dl>
+
+                  <div :if={@viewing_task.tags != []} id="view-task-tags" class="flex flex-wrap gap-2">
+                    <span
+                      :for={tag <- @viewing_task.tags}
+                      class={[
+                        "rounded-md border px-2 py-1 text-xs font-medium",
+                        tag_color_class(tag.color)
+                      ]}
+                    >
+                      {tag.name}
+                    </span>
+                  </div>
+                </aside>
+              </div>
+
+              <div class="flex items-center justify-end gap-2 border-t border-stone-100 bg-white px-6 py-4 dark:border-stone-800 dark:bg-stone-900">
+                <button
+                  type="button"
+                  class="rounded-lg px-4 py-2 text-sm font-semibold text-stone-500 transition hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100"
+                  phx-click="close_modal"
+                >
+                  Close
+                </button>
+                <button
+                  id="edit-viewed-task-button"
+                  type="button"
+                  class="inline-flex items-center gap-2 rounded-lg bg-stone-950 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-stone-900/20 transition hover:-translate-y-0.5 hover:bg-stone-800 focus:outline-none focus:ring-2 focus:ring-rose-300 dark:bg-stone-50 dark:text-stone-950 dark:hover:bg-white"
+                  phx-click="edit_task"
+                  phx-value-task_id={@viewing_task && @viewing_task.id}
+                >
+                  <.icon name="hero-pencil-square" class="size-4" /> Edit
+                </button>
+              </div>
             </div>
 
             <div

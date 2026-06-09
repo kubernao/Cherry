@@ -154,15 +154,23 @@ defmodule CherryWeb.UiLiveTest do
     assert Workspace.get_task!(first.id).column_id == backlog.id
   end
 
-  test "double-clicking a card opens edit modal and persists task fields", %{conn: conn} do
+  test "double-clicking a card opens details modal before editing task fields", %{conn: conn} do
     {conn, _user} = log_in(conn)
     %{project: project, first: first, next: next} = project_with_tasks()
 
     {:ok, view, _html} = live(conn, ~p"/projects/#{project.id}")
 
-    render_hook(view, "edit_task", %{"task_id" => first.id})
+    render_hook(view, "view_task", %{"task_id" => first.id})
 
     assert has_element?(view, "#project-modal")
+    assert has_element?(view, "#view-task-modal")
+    assert has_element?(view, "#view-task-#{first.id}-title")
+    assert has_element?(view, "#view-task-meta")
+    assert has_element?(view, "#edit-viewed-task-button")
+    refute has_element?(view, "#edit-task-form")
+
+    view |> element("#edit-viewed-task-button") |> render_click()
+
     assert has_element?(view, "#edit-task-modal")
     assert has_element?(view, "#edit-task-form")
     assert has_element?(view, "#task_body.cherry-notes-field")
