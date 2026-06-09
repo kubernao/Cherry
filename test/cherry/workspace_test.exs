@@ -28,6 +28,32 @@ defmodule Cherry.WorkspaceTest do
     assert found_task.id == task.id
   end
 
+  test "updates, archives, restores, and deletes projects" do
+    {:ok, project} = Workspace.create_project(%{"title" => "Ops"})
+
+    assert {:ok, project} =
+             Workspace.update_project(project, %{
+               "title" => "Operations",
+               "description" => "Runbook",
+               "status" => "paused",
+               "priority" => "high"
+             })
+
+    assert project.title == "Operations"
+    assert project.description == "Runbook"
+    assert project.status == "paused"
+    assert project.priority == "high"
+
+    assert {:ok, project} = Workspace.archive_project(project)
+    assert project.archived
+
+    assert {:ok, project} = Workspace.restore_project(project)
+    refute project.archived
+
+    assert {:ok, _project} = Workspace.delete_project(project)
+    assert_raise Ecto.NoResultsError, fn -> Workspace.get_project!(project.id) end
+  end
+
   test "creates and updates task tags with colors from structured form params" do
     {:ok, project} = Workspace.create_project(%{"title" => "Launch"})
 

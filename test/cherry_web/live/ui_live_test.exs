@@ -70,6 +70,55 @@ defmodule CherryWeb.UiLiveTest do
     refute has_element?(view, "#project-form")
   end
 
+  test "dashboard edits, archives, restores, and deletes projects", %{conn: conn} do
+    {conn, _user} = log_in(conn)
+    %{project: project, first: task} = project_with_tasks()
+
+    {:ok, view, _html} = live(conn, ~p"/")
+
+    assert has_element?(view, "#open-project-#{project.id}")
+    assert has_element?(view, "#edit-project-#{project.id}")
+    assert has_element?(view, "#archive-project-#{project.id}")
+    assert has_element?(view, "#delete-project-#{project.id}")
+
+    view |> element("#edit-project-#{project.id}") |> render_click()
+    assert has_element?(view, "#edit-project-form")
+
+    view
+    |> element("#edit-project-form")
+    |> render_submit(%{
+      "project" => %{
+        "id" => project.id,
+        "title" => "Client Portal Updated",
+        "description" => "Updated notes",
+        "status" => "paused",
+        "priority" => "urgent"
+      }
+    })
+
+    assert project = Workspace.get_project!(project.id)
+    assert project.title == "Client Portal Updated"
+    assert project.status == "paused"
+    assert project.priority == "urgent"
+    assert has_element?(view, "#project-card-#{project.id}")
+
+    view |> element("#archive-project-#{project.id}") |> render_click()
+    assert Workspace.get_project!(project.id).archived
+    assert has_element?(view, "#archived-project-#{project.id}")
+
+    view |> element("#restore-project-#{project.id}") |> render_click()
+    refute Workspace.get_project!(project.id).archived
+    assert has_element?(view, "#project-card-#{project.id}")
+
+    view |> element("#delete-project-#{project.id}") |> render_click()
+    assert has_element?(view, "#delete-project-confirmation")
+
+    view |> element("#confirm-delete-project-button") |> render_click()
+    assert_raise Ecto.NoResultsError, fn -> Workspace.get_project!(project.id) end
+    assert_raise Ecto.NoResultsError, fn -> Workspace.get_task!(task.id) end
+    refute has_element?(view, "#project-card-#{project.id}")
+  end
+
   test "project board renders simplified columns, cards, menu, and alternate views", %{conn: conn} do
     {conn, _user} = log_in(conn)
     %{project: project, backlog: backlog, first: first} = project_with_tasks()

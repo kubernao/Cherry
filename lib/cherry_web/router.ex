@@ -60,7 +60,10 @@ defmodule CherryWeb.Router do
     pipe_through [:api, :api_write]
 
     post "/projects", ProjectController, :create
+    patch "/projects/:id", ProjectController, :update
     post "/projects/:id/archive", ProjectController, :archive
+    post "/projects/:id/restore", ProjectController, :restore
+    delete "/projects/:id", ProjectController, :delete
     post "/tasks", TaskController, :create
     patch "/tasks/:id", TaskController, :update
     post "/tasks/:id/move", TaskController, :move

@@ -22,11 +22,41 @@ defmodule CherryWeb.Api.ProjectController do
     json(conn, %{project: project_json(project, true)})
   end
 
+  def update(conn, %{"id" => id, "project" => attrs}) do
+    project = Workspace.get_project!(id)
+
+    case Workspace.update_project(project, attrs,
+           actor: "api",
+           user_id: conn.assigns.current_user.id
+         ) do
+      {:ok, project} -> json(conn, %{project: project_json(project)})
+      {:error, changeset} -> render_error(conn, changeset)
+    end
+  end
+
   def archive(conn, %{"id" => id}) do
     project = Workspace.get_project!(id)
 
     case Workspace.archive_project(project, actor: "api", user_id: conn.assigns.current_user.id) do
       {:ok, project} -> json(conn, %{project: project_json(project)})
+      {:error, changeset} -> render_error(conn, changeset)
+    end
+  end
+
+  def restore(conn, %{"id" => id}) do
+    project = Workspace.get_project!(id)
+
+    case Workspace.restore_project(project, actor: "api", user_id: conn.assigns.current_user.id) do
+      {:ok, project} -> json(conn, %{project: project_json(project)})
+      {:error, changeset} -> render_error(conn, changeset)
+    end
+  end
+
+  def delete(conn, %{"id" => id}) do
+    project = Workspace.get_project!(id)
+
+    case Workspace.delete_project(project, actor: "api", user_id: conn.assigns.current_user.id) do
+      {:ok, _project} -> send_resp(conn, :no_content, "")
       {:error, changeset} -> render_error(conn, changeset)
     end
   end

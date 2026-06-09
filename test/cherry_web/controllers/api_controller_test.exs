@@ -45,5 +45,45 @@ defmodule CherryWeb.ApiControllerTest do
     assert %{"task" => %{"status" => "done"}} = json_response(conn, 200)
   end
 
+  test "archives, restores, and deletes projects", %{conn: conn, token: token} do
+    conn =
+      conn
+      |> auth(token)
+      |> post(~p"/api/v1/projects", %{
+        "project" => %{"title" => "Project CRUD", "description" => "Initial"}
+      })
+
+    assert %{"project" => %{"id" => project_id}} = json_response(conn, 201)
+
+    conn =
+      build_conn()
+      |> auth(token)
+      |> patch(~p"/api/v1/projects/#{project_id}", %{
+        "project" => %{
+          "title" => "Project CRUD Updated",
+          "status" => "paused",
+          "priority" => "urgent"
+        }
+      })
+
+    assert %{
+             "project" => %{
+               "title" => "Project CRUD Updated",
+               "status" => "paused",
+               "priority" => "urgent"
+             }
+           } = json_response(conn, 200)
+
+    conn = build_conn() |> auth(token) |> post(~p"/api/v1/projects/#{project_id}/archive")
+    assert %{"project" => %{"archived" => true}} = json_response(conn, 200)
+
+    conn = build_conn() |> auth(token) |> post(~p"/api/v1/projects/#{project_id}/restore")
+    assert %{"project" => %{"archived" => false}} = json_response(conn, 200)
+
+    conn = build_conn() |> auth(token) |> delete(~p"/api/v1/projects/#{project_id}")
+    assert response(conn, 204) == ""
+    assert_raise Ecto.NoResultsError, fn -> Workspace.get_project!(project_id) end
+  end
+
   defp auth(conn, token), do: put_req_header(conn, "authorization", "Bearer #{token}")
 end

@@ -9,7 +9,9 @@ defmodule CherryWeb.DashboardLive do
      |> assign(:page_title, "Projects")
      |> assign(:query, "")
      |> assign(:active_modal, nil)
-     |> assign(:project_form, to_form(%{"title" => "", "description" => ""}, as: :project))
+     |> assign(:editing_project, nil)
+     |> assign(:deleting_project, nil)
+     |> assign(:project_form, project_form())
      |> load_projects()}
   end
 
@@ -31,12 +33,108 @@ defmodule CherryWeb.DashboardLive do
     end
   end
 
+  def handle_event("edit_project", %{"id" => id}, socket) do
+    project = Workspace.get_project!(id)
+
+    {:noreply,
+     assign(socket,
+       active_modal: :edit_project,
+       editing_project: project,
+       deleting_project: nil,
+       project_form: project_form(project)
+     )}
+  end
+
+  def handle_event("update_project", %{"project" => attrs}, socket) do
+    project = socket.assigns.editing_project || Workspace.get_project!(attrs["id"])
+
+    case Workspace.update_project(project, attrs,
+           actor: "web",
+           user_id: socket.assigns.current_user.id
+         ) do
+      {:ok, _project} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Project updated.")
+         |> close_project_modal()
+         |> load_projects()}
+
+      {:error, changeset} ->
+        {:noreply, assign(socket, project_form: to_form(changeset, as: :project))}
+    end
+  end
+
+  def handle_event("archive_project", %{"id" => id}, socket) do
+    project = Workspace.get_project!(id)
+
+    case Workspace.archive_project(project, actor: "web", user_id: socket.assigns.current_user.id) do
+      {:ok, _project} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Project archived.")
+         |> close_project_modal()
+         |> load_projects()}
+
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, "Project could not be archived.")}
+    end
+  end
+
+  def handle_event("restore_project", %{"id" => id}, socket) do
+    project = Workspace.get_project!(id)
+
+    case Workspace.restore_project(project, actor: "web", user_id: socket.assigns.current_user.id) do
+      {:ok, _project} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Project restored.")
+         |> close_project_modal()
+         |> load_projects()}
+
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, "Project could not be restored.")}
+    end
+  end
+
+  def handle_event("confirm_delete_project", %{"id" => id}, socket) do
+    project = Workspace.get_project!(id)
+
+    {:noreply,
+     assign(socket,
+       active_modal: :delete_project,
+       editing_project: nil,
+       deleting_project: project
+     )}
+  end
+
+  def handle_event("delete_project", %{"id" => id}, socket) do
+    project = Workspace.get_project!(id)
+
+    case Workspace.delete_project(project, actor: "web", user_id: socket.assigns.current_user.id) do
+      {:ok, _project} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Project deleted.")
+         |> close_project_modal()
+         |> load_projects()}
+
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, "Project could not be deleted.")}
+    end
+  end
+
   def handle_event("open_modal", %{"modal" => "new_project"}, socket) do
-    {:noreply, assign(socket, :active_modal, :new_project)}
+    {:noreply,
+     assign(socket,
+       active_modal: :new_project,
+       editing_project: nil,
+       deleting_project: nil,
+       project_form: project_form()
+     )}
   end
 
   def handle_event("close_modal", _params, socket) do
-    {:noreply, assign(socket, :active_modal, nil)}
+    {:noreply, close_project_modal(socket)}
   end
 
   def handle_event("search", %{"q" => query}, socket) do
@@ -50,6 +148,42 @@ defmodule CherryWeb.DashboardLive do
     |> assign(:archived_projects, Workspace.list_projects(archived: true))
     |> assign(:search_results, nil)
   end
+
+  defp close_project_modal(socket) do
+    assign(socket,
+      active_modal: nil,
+      editing_project: nil,
+      deleting_project: nil,
+      project_form: project_form()
+    )
+  end
+
+  defp project_form(project \\ nil)
+
+  defp project_form(nil) do
+    to_form(
+      %{"title" => "", "description" => "", "status" => "active", "priority" => "normal"},
+      as: :project
+    )
+  end
+
+  defp project_form(project) do
+    to_form(
+      %{
+        "id" => project.id,
+        "title" => project.title,
+        "description" => project.description || "",
+        "status" => project.status,
+        "priority" => project.priority
+      },
+      as: :project
+    )
+  end
+
+  defp status_options, do: [{"Active", "active"}, {"Paused", "paused"}, {"Done", "done"}]
+
+  defp priority_options,
+    do: [{"Low", "low"}, {"Normal", "normal"}, {"High", "high"}, {"Urgent", "urgent"}]
 
   def render(assigns) do
     ~H"""
@@ -123,14 +257,19 @@ defmodule CherryWeb.DashboardLive do
         <div>
           <section>
             <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              <.link
+              <article
                 :for={project <- @projects}
-                navigate={~p"/projects/#{project.id}"}
                 id={"project-card-#{project.id}"}
-                class="group block rounded-xl border border-stone-200 bg-white/85 p-4 shadow-sm transition hover:-translate-y-1 hover:border-stone-300 hover:bg-white hover:shadow-md dark:border-stone-700 dark:bg-stone-900/85 dark:hover:border-stone-600 dark:hover:bg-stone-900"
+                class="group rounded-xl border border-stone-200 bg-white/85 p-4 shadow-sm transition hover:-translate-y-1 hover:border-stone-300 hover:bg-white hover:shadow-md dark:border-stone-700 dark:bg-stone-900/85 dark:hover:border-stone-600 dark:hover:bg-stone-900"
               >
                 <div class="flex items-start justify-between gap-3">
-                  <h2 class="font-semibold text-stone-950 dark:text-stone-50">{project.title}</h2>
+                  <.link
+                    navigate={~p"/projects/#{project.id}"}
+                    id={"open-project-#{project.id}"}
+                    class="min-w-0 font-semibold text-stone-950 transition hover:text-rose-700 dark:text-stone-50 dark:hover:text-rose-300"
+                  >
+                    {project.title}
+                  </.link>
                   <span class="rounded-md bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">
                     {project.priority}
                   </span>
@@ -142,11 +281,47 @@ defmodule CherryWeb.DashboardLive do
                   <p class="text-xs font-semibold uppercase text-stone-500 dark:text-stone-400">
                     {project.status}
                   </p>
-                  <span class="rounded-md p-1 text-stone-300 transition group-hover:bg-stone-100 group-hover:text-stone-700 dark:text-stone-500 dark:group-hover:bg-stone-800 dark:group-hover:text-stone-100">
-                    <.icon name="hero-arrow-right" class="size-4" />
-                  </span>
+                  <div class="flex items-center gap-1">
+                    <button
+                      id={"edit-project-#{project.id}"}
+                      type="button"
+                      class="rounded-md p-1.5 text-stone-400 transition hover:bg-stone-100 hover:text-stone-900 dark:hover:bg-stone-800 dark:hover:text-stone-100"
+                      phx-click="edit_project"
+                      phx-value-id={project.id}
+                      aria-label={"Edit #{project.title}"}
+                    >
+                      <.icon name="hero-pencil-square" class="size-4" />
+                    </button>
+                    <button
+                      id={"archive-project-#{project.id}"}
+                      type="button"
+                      class="rounded-md p-1.5 text-stone-400 transition hover:bg-amber-50 hover:text-amber-700 dark:hover:bg-amber-950/50 dark:hover:text-amber-300"
+                      phx-click="archive_project"
+                      phx-value-id={project.id}
+                      aria-label={"Archive #{project.title}"}
+                    >
+                      <.icon name="hero-archive-box" class="size-4" />
+                    </button>
+                    <button
+                      id={"delete-project-#{project.id}"}
+                      type="button"
+                      class="rounded-md p-1.5 text-stone-400 transition hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/50 dark:hover:text-rose-300"
+                      phx-click="confirm_delete_project"
+                      phx-value-id={project.id}
+                      aria-label={"Delete #{project.title}"}
+                    >
+                      <.icon name="hero-trash" class="size-4" />
+                    </button>
+                    <.link
+                      navigate={~p"/projects/#{project.id}"}
+                      class="rounded-md p-1.5 text-stone-300 transition group-hover:bg-stone-100 group-hover:text-stone-700 dark:text-stone-500 dark:group-hover:bg-stone-800 dark:group-hover:text-stone-100"
+                      aria-label={"Open #{project.title}"}
+                    >
+                      <.icon name="hero-arrow-right" class="size-4" />
+                    </.link>
+                  </div>
                 </div>
-              </.link>
+              </article>
             </div>
 
             <div
@@ -171,18 +346,43 @@ defmodule CherryWeb.DashboardLive do
             Archived
           </h2>
           <div class="mt-3 flex flex-wrap gap-2">
-            <.link
+            <div
               :for={project <- @archived_projects}
-              navigate={~p"/projects/#{project.id}"}
-              class="rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-600 transition hover:-translate-y-0.5 hover:border-stone-300 hover:text-stone-950 dark:border-stone-700 dark:bg-stone-950 dark:text-stone-300 dark:hover:border-stone-600 dark:hover:text-stone-50"
+              id={"archived-project-#{project.id}"}
+              class="flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-600 transition hover:-translate-y-0.5 hover:border-stone-300 dark:border-stone-700 dark:bg-stone-950 dark:text-stone-300 dark:hover:border-stone-600"
             >
-              {project.title}
-            </.link>
+              <.link
+                navigate={~p"/projects/#{project.id}"}
+                class="font-medium transition hover:text-stone-950 dark:hover:text-stone-50"
+              >
+                {project.title}
+              </.link>
+              <button
+                id={"restore-project-#{project.id}"}
+                type="button"
+                class="rounded-md p-1 text-stone-400 transition hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-emerald-950/50 dark:hover:text-emerald-300"
+                phx-click="restore_project"
+                phx-value-id={project.id}
+                aria-label={"Restore #{project.title}"}
+              >
+                <.icon name="hero-arrow-uturn-left" class="size-4" />
+              </button>
+              <button
+                id={"delete-archived-project-#{project.id}"}
+                type="button"
+                class="rounded-md p-1 text-stone-400 transition hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/50 dark:hover:text-rose-300"
+                phx-click="confirm_delete_project"
+                phx-value-id={project.id}
+                aria-label={"Delete #{project.title}"}
+              >
+                <.icon name="hero-trash" class="size-4" />
+              </button>
+            </div>
           </div>
         </section>
 
         <div
-          :if={@active_modal == :new_project}
+          :if={@active_modal in [:new_project, :edit_project, :delete_project]}
           id="dashboard-modal-backdrop"
           class="fixed inset-0 z-50 grid place-items-center overflow-y-auto px-4 py-8"
         >
@@ -201,17 +401,40 @@ defmodule CherryWeb.DashboardLive do
               <div class="flex items-start justify-between gap-4">
                 <div class="flex min-w-0 gap-4">
                   <span class="grid size-11 shrink-0 place-items-center rounded-xl bg-rose-50 text-rose-700 ring-1 ring-rose-100 dark:bg-rose-950/40 dark:text-rose-300 dark:ring-rose-900/60">
-                    <.icon name="hero-folder-plus" class="size-5" />
+                    <.icon
+                      name={
+                        case @active_modal do
+                          :new_project -> "hero-folder-plus"
+                          :edit_project -> "hero-pencil-square"
+                          :delete_project -> "hero-trash"
+                        end
+                      }
+                      class="size-5"
+                    />
                   </span>
                   <div>
                     <p class="text-xs font-semibold uppercase text-rose-700 dark:text-rose-300">
                       Project
                     </p>
                     <h2 class="mt-1 text-xl font-semibold text-stone-950 dark:text-stone-50">
-                      Create a new project
+                      <%= case @active_modal do %>
+                        <% :new_project -> %>
+                          Create a new project
+                        <% :edit_project -> %>
+                          Edit project
+                        <% :delete_project -> %>
+                          Delete project
+                      <% end %>
                     </h2>
                     <p class="mt-1 max-w-lg text-sm leading-6 text-stone-500 dark:text-stone-400">
-                      Give it a clear name and a short note so the board opens with useful context.
+                      <%= case @active_modal do %>
+                        <% :new_project -> %>
+                          Give it a clear name and a short note so the board opens with useful context.
+                        <% :edit_project -> %>
+                          Update the project name, notes, status, and priority.
+                        <% :delete_project -> %>
+                          Permanently remove this project and its tasks.
+                      <% end %>
                     </p>
                   </div>
                 </div>
@@ -228,6 +451,7 @@ defmodule CherryWeb.DashboardLive do
             </div>
 
             <.form
+              :if={@active_modal == :new_project}
               id="project-form"
               for={@project_form}
               phx-submit="create_project"
@@ -247,6 +471,22 @@ defmodule CherryWeb.DashboardLive do
                   rows="7"
                   class="cherry-field cherry-notes-field"
                 />
+                <div class="grid gap-4 sm:grid-cols-2">
+                  <.input
+                    field={@project_form[:status]}
+                    type="select"
+                    label="Status"
+                    options={status_options()}
+                    class="cherry-field"
+                  />
+                  <.input
+                    field={@project_form[:priority]}
+                    type="select"
+                    label="Priority"
+                    options={priority_options()}
+                    class="cherry-field"
+                  />
+                </div>
               </div>
               <div class="flex items-center justify-end gap-2 border-t border-stone-100 bg-stone-50/60 px-6 py-4 dark:border-stone-800 dark:bg-stone-950/40">
                 <button
@@ -265,6 +505,104 @@ defmodule CherryWeb.DashboardLive do
                 </button>
               </div>
             </.form>
+
+            <.form
+              :if={@active_modal == :edit_project}
+              id="edit-project-form"
+              for={@project_form}
+              phx-submit="update_project"
+              class="cherry-form"
+            >
+              <input type="hidden" name="project[id]" value={@project_form[:id].value} />
+              <div class="space-y-5 p-6">
+                <.input
+                  field={@project_form[:title]}
+                  label="Project title"
+                  class="cherry-field"
+                  required
+                />
+                <.input
+                  field={@project_form[:description]}
+                  type="textarea"
+                  label="Description"
+                  rows="7"
+                  class="cherry-field cherry-notes-field"
+                />
+                <div class="grid gap-4 sm:grid-cols-2">
+                  <.input
+                    field={@project_form[:status]}
+                    type="select"
+                    label="Status"
+                    options={status_options()}
+                    class="cherry-field"
+                  />
+                  <.input
+                    field={@project_form[:priority]}
+                    type="select"
+                    label="Priority"
+                    options={priority_options()}
+                    class="cherry-field"
+                  />
+                </div>
+              </div>
+              <div class="flex items-center justify-between gap-2 border-t border-stone-100 bg-stone-50/60 px-6 py-4 dark:border-stone-800 dark:bg-stone-950/40">
+                <button
+                  id={"archive-edit-project-#{@editing_project.id}"}
+                  type="button"
+                  class="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-50 dark:text-amber-300 dark:hover:bg-amber-950/50"
+                  phx-click="archive_project"
+                  phx-value-id={@editing_project.id}
+                >
+                  <.icon name="hero-archive-box" class="size-4" /> Archive
+                </button>
+                <div class="flex items-center gap-2">
+                  <button
+                    type="button"
+                    class="rounded-lg px-4 py-2 text-sm font-semibold text-stone-500 transition hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100"
+                    phx-click="close_modal"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    id="update-project-button"
+                    class="rounded-lg bg-stone-950 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-stone-900/20 transition hover:-translate-y-0.5 hover:bg-stone-800 focus:outline-none focus:ring-2 focus:ring-rose-300 dark:bg-stone-50 dark:text-stone-950 dark:hover:bg-white"
+                    type="submit"
+                  >
+                    Save project
+                  </button>
+                </div>
+              </div>
+            </.form>
+
+            <div :if={@active_modal == :delete_project} id="delete-project-confirmation">
+              <div class="space-y-4 p-6">
+                <p class="text-sm leading-6 text-stone-600 dark:text-stone-300">
+                  This will permanently delete
+                  <span class="font-semibold text-stone-950 dark:text-stone-50">
+                    {@deleting_project.title}
+                  </span>
+                  along with its columns and tasks.
+                </p>
+              </div>
+              <div class="flex items-center justify-end gap-2 border-t border-stone-100 bg-stone-50/60 px-6 py-4 dark:border-stone-800 dark:bg-stone-950/40">
+                <button
+                  type="button"
+                  class="rounded-lg px-4 py-2 text-sm font-semibold text-stone-500 transition hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100"
+                  phx-click="close_modal"
+                >
+                  Cancel
+                </button>
+                <button
+                  id="confirm-delete-project-button"
+                  type="button"
+                  class="rounded-lg bg-rose-700 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-rose-900/20 transition hover:-translate-y-0.5 hover:bg-rose-800 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                  phx-click="delete_project"
+                  phx-value-id={@deleting_project.id}
+                >
+                  Delete project
+                </button>
+              </div>
+            </div>
           </section>
         </div>
       </section>

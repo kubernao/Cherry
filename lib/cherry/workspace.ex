@@ -51,6 +51,21 @@ defmodule Cherry.Workspace do
     update_project(project, %{archived: true}, opts)
   end
 
+  def restore_project(%Project{} = project, opts \\ []) do
+    update_project(project, %{archived: false}, Keyword.put(opts, :action, "restore"))
+  end
+
+  def delete_project(%Project{} = project, opts \\ []) do
+    Repo.transaction(fn ->
+      with {:ok, project} <- Repo.delete(project) do
+        log!("delete", project, opts)
+        project
+      else
+        {:error, changeset} -> Repo.rollback(changeset)
+      end
+    end)
+  end
+
   def list_columns(project_id),
     do: Repo.all(from c in Column, where: c.project_id == ^project_id, order_by: c.position)
 
