@@ -1,0 +1,37 @@
+defmodule Cherry.CLITest do
+  use ExUnit.Case
+
+  setup do
+    path = Path.join(System.tmp_dir!(), "cherry-cli-#{System.unique_integer([:positive])}.json")
+    System.put_env("CHERRY_CONFIG_PATH", path)
+
+    on_exit(fn ->
+      System.delete_env("CHERRY_CONFIG_PATH")
+      File.rm(path)
+    end)
+
+    %{path: path}
+  end
+
+  test "stores url and token for agent use", %{path: path} do
+    assert {:ok, message} =
+             Cherry.CLI.run([
+               "auth",
+               "login",
+               "--url",
+               "http://localhost:4000/",
+               "--token",
+               "cherry_test"
+             ])
+
+    assert message =~ path
+
+    assert %{"url" => "http://localhost:4000", "token" => "cherry_test"} =
+             path |> File.read!() |> Jason.decode!()
+  end
+
+  test "reports missing config before API commands" do
+    assert {:error, message} = Cherry.CLI.run(["projects", "list"])
+    assert message =~ "not logged in"
+  end
+end

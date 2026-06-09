@@ -1,0 +1,73 @@
+<Layouts.app flash={@flash}>
+  <section class="mx-auto grid min-h-[calc(100vh-9rem)] max-w-5xl items-center gap-8 lg:grid-cols-[1fr_420px]">
+    <div class="hidden lg:block">
+      <p class="text-sm font-semibold text-rose-700 dark:text-rose-300">Cherry</p>
+      <h1 class="mt-3 max-w-xl text-4xl font-semibold tracking-normal text-stone-950 dark:text-stone-50">
+        A warm workspace for projects that need a little momentum.
+      </h1>
+      <p class="mt-4 max-w-lg text-sm leading-6 text-stone-600 dark:text-stone-300">
+        Capture tasks, shape a board, and keep context nearby without turning planning into another project.
+      </p>
+      <div class="mt-8 grid max-w-md gap-3">
+        <div class="rounded-xl border border-stone-200 bg-white/75 p-4 shadow-sm dark:border-stone-700 dark:bg-stone-900/75">
+          <div class="flex items-center gap-3">
+            <span class="rounded-lg bg-emerald-50 p-2 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+              <.icon name="hero-check-circle" class="size-5" />
+            </span>
+            <p class="text-sm font-semibold text-stone-800 dark:text-stone-100">
+              Board, list, and date views
+            </p>
+          </div>
+        </div>
+        <div class="rounded-xl border border-stone-200 bg-white/75 p-4 shadow-sm dark:border-stone-700 dark:bg-stone-900/75">
+          <div class="flex items-center gap-3">
+            <span class="rounded-lg bg-rose-50 p-2 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">
+              <.icon name="hero-arrows-up-down" class="size-5" />
+            </span>
+            <p class="text-sm font-semibold text-stone-800 dark:text-stone-100">
+              Drag tasks into place
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="rounded-2xl border border-stone-200 bg-white/85 p-6 shadow-sm dark:border-stone-700 dark:bg-stone-900/85">
+      <div class="mb-8">
+        <p class="text-sm font-semibold text-rose-700 dark:text-rose-300">Welcome back</p>
+        <h1 class="mt-2 text-3xl font-semibold tracking-normal text-stone-950 dark:text-stone-50">
+          Sign in
+        </h1>
+        <p class="mt-3 text-sm leading-6 text-stone-600 dark:text-stone-300">
+          Access your personal project workspace.
+        </p>
+      </div>
+
+      <.form id="login-form" for={@form} action={~p"/login"} class="space-y-4">
+        <.input
+          field={@form[:email]}
+          type="email"
+          label="Email"
+          class="cherry-field"
+          required
+          autocomplete="username"
+        />
+        <.input
+          field={@form[:password]}
+          type="password"
+          label="Password"
+          class="cherry-field"
+          required
+          autocomplete="current-password"
+        />
+        <button
+          id="login-button"
+          class="w-full rounded-lg bg-stone-950 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-stone-900/20 transition hover:-translate-y-0.5 hover:bg-stone-800 focus:outline-none focus:ring-2 focus:ring-rose-300 dark:bg-stone-50 dark:text-stone-950 dark:hover:bg-white"
+          type="submit"
+        >
+          Sign in
+        </button>
+      </.form>
+    </div>
+  </section>
+</Layouts.app>

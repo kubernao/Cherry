@@ -1,0 +1,15 @@
+.DS_Store
+/_build/
+/cover/
+/deps/
+/doc/
+/erl_crash.dump
+/priv/static/assets/
+/node_modules/
+/assets/node_modules/
+/tmp/
+
+.git
+.github
+.env
+.env.*

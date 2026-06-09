@@ -1,0 +1,401 @@
+/* See the Tailwind configuration guide for advanced usage
+   https://tailwindcss.com/docs/configuration */
+
+@import "tailwindcss" source(none);
+@source "../css";
+@source "../js";
+@source "../../lib/cherry_web";
+
+/* A Tailwind plugin that makes "hero-#{ICON}" classes available.
+   The heroicons installation itself is managed by your mix.exs */
+@plugin "../vendor/heroicons";
+
+/* daisyUI Tailwind Plugin. You can update this file by fetching the latest version with:
+   curl -sLO https://github.com/saadeghi/daisyui/releases/latest/download/daisyui.js
+   Make sure to look at the daisyUI changelog: https://daisyui.com/docs/changelog/ */
+@plugin "../vendor/daisyui" {
+  themes: false;
+}
+
+/* daisyUI theme plugin. You can update this file by fetching the latest version with:
+  curl -sLO https://github.com/saadeghi/daisyui/releases/latest/download/daisyui-theme.js
+  We ship with two themes, a light one inspired on Phoenix colors and a dark one inspired
+  on Elixir colors. Build your own at: https://daisyui.com/theme-generator/ */
+@plugin "../vendor/daisyui-theme" {
+  name: "dark";
+  default: false;
+  prefersdark: true;
+  color-scheme: "dark";
+  --color-base-100: oklch(30.33% 0.016 252.42);
+  --color-base-200: oklch(25.26% 0.014 253.1);
+  --color-base-300: oklch(20.15% 0.012 254.09);
+  --color-base-content: oklch(97.807% 0.029 256.847);
+  --color-primary: oklch(58% 0.233 277.117);
+  --color-primary-content: oklch(96% 0.018 272.314);
+  --color-secondary: oklch(58% 0.233 277.117);
+  --color-secondary-content: oklch(96% 0.018 272.314);
+  --color-accent: oklch(60% 0.25 292.717);
+  --color-accent-content: oklch(96% 0.016 293.756);
+  --color-neutral: oklch(37% 0.044 257.287);
+  --color-neutral-content: oklch(98% 0.003 247.858);
+  --color-info: oklch(58% 0.158 241.966);
+  --color-info-content: oklch(97% 0.013 236.62);
+  --color-success: oklch(60% 0.118 184.704);
+  --color-success-content: oklch(98% 0.014 180.72);
+  --color-warning: oklch(66% 0.179 58.318);
+  --color-warning-content: oklch(98% 0.022 95.277);
+  --color-error: oklch(58% 0.253 17.585);
+  --color-error-content: oklch(96% 0.015 12.422);
+  --radius-selector: 0.25rem;
+  --radius-field: 0.25rem;
+  --radius-box: 0.5rem;
+  --size-selector: 0.21875rem;
+  --size-field: 0.21875rem;
+  --border: 1.5px;
+  --depth: 1;
+  --noise: 0;
+}
+
+@plugin "../vendor/daisyui-theme" {
+  name: "light";
+  default: true;
+  prefersdark: false;
+  color-scheme: "light";
+  --color-base-100: oklch(98% 0 0);
+  --color-base-200: oklch(96% 0.001 286.375);
+  --color-base-300: oklch(92% 0.004 286.32);
+  --color-base-content: oklch(21% 0.006 285.885);
+  --color-primary: oklch(70% 0.213 47.604);
+  --color-primary-content: oklch(98% 0.016 73.684);
+  --color-secondary: oklch(55% 0.027 264.364);
+  --color-secondary-content: oklch(98% 0.002 247.839);
+  --color-accent: oklch(0% 0 0);
+  --color-accent-content: oklch(100% 0 0);
+  --color-neutral: oklch(44% 0.017 285.786);
+  --color-neutral-content: oklch(98% 0 0);
+  --color-info: oklch(62% 0.214 259.815);
+  --color-info-content: oklch(97% 0.014 254.604);
+  --color-success: oklch(70% 0.14 182.503);
+  --color-success-content: oklch(98% 0.014 180.72);
+  --color-warning: oklch(66% 0.179 58.318);
+  --color-warning-content: oklch(98% 0.022 95.277);
+  --color-error: oklch(58% 0.253 17.585);
+  --color-error-content: oklch(96% 0.015 12.422);
+  --radius-selector: 0.25rem;
+  --radius-field: 0.25rem;
+  --radius-box: 0.5rem;
+  --size-selector: 0.21875rem;
+  --size-field: 0.21875rem;
+  --border: 1.5px;
+  --depth: 1;
+  --noise: 0;
+}
+
+/* Add variants based on LiveView classes */
+@custom-variant phx-click-loading (.phx-click-loading&, .phx-click-loading &);
+@custom-variant phx-submit-loading (.phx-submit-loading&, .phx-submit-loading &);
+@custom-variant phx-change-loading (.phx-change-loading&, .phx-change-loading &);
+
+/* Use the data attribute for dark mode  */
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+/* Make LiveView wrapper divs transparent for layout */
+[data-phx-session], [data-phx-teleported-src] { display: contents }
+
+/* This file is for your main application CSS */
+
+.cherry-field {
+  width: 100%;
+  border-radius: 0.5rem;
+  border: 1px solid rgb(214 211 209);
+  background: rgb(255 255 255 / 0.88);
+  padding: 0.625rem 0.75rem;
+  color: rgb(28 25 23);
+  box-shadow: 0 1px 1px rgb(41 37 36 / 0.04);
+  transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+}
+
+.cherry-form .fieldset {
+  margin-bottom: 0;
+}
+
+.cherry-form .label {
+  display: block;
+  margin-bottom: 0.375rem;
+  color: rgb(87 83 78);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+[data-theme="dark"] .cherry-form .label {
+  color: rgb(214 211 209);
+}
+
+[data-theme="dark"] .cherry-field {
+  border-color: rgb(68 64 60);
+  background: rgb(28 25 23 / 0.88);
+  color: rgb(250 250 249);
+  box-shadow: 0 1px 1px rgb(0 0 0 / 0.18);
+}
+
+.cherry-field:focus {
+  outline: none;
+  border-color: rgb(244 63 94);
+  box-shadow: 0 0 0 3px rgb(244 63 94 / 0.14);
+  background: white;
+}
+
+[data-theme="dark"] .cherry-field:focus {
+  border-color: rgb(251 113 133);
+  box-shadow: 0 0 0 3px rgb(251 113 133 / 0.18);
+  background: rgb(12 10 9);
+}
+
+.cherry-field::placeholder {
+  color: rgb(120 113 108);
+}
+
+[data-theme="dark"] .cherry-field::placeholder {
+  color: rgb(120 113 108);
+}
+
+.cherry-search-field {
+  padding-left: 2.75rem;
+}
+
+.cherry-notes-field {
+  min-height: 11rem;
+  resize: vertical;
+  line-height: 1.7;
+  background:
+    linear-gradient(rgb(255 255 255 / 0.92), rgb(255 255 255 / 0.92)),
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 1.65rem,
+      rgb(244 63 94 / 0.12) 1.65rem,
+      rgb(244 63 94 / 0.12) calc(1.65rem + 1px)
+    );
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.8),
+    inset 0 0 0 1px rgb(255 255 255 / 0.34),
+    0 1px 2px rgb(41 37 36 / 0.05);
+}
+
+.cherry-notes-field:focus {
+  background:
+    linear-gradient(rgb(255 255 255 / 0.96), rgb(255 255 255 / 0.96)),
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 1.65rem,
+      rgb(244 63 94 / 0.16) 1.65rem,
+      rgb(244 63 94 / 0.16) calc(1.65rem + 1px)
+    );
+}
+
+[data-theme="dark"] .cherry-notes-field {
+  background:
+    linear-gradient(rgb(28 25 23 / 0.94), rgb(28 25 23 / 0.94)),
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 1.65rem,
+      rgb(251 113 133 / 0.14) 1.65rem,
+      rgb(251 113 133 / 0.14) calc(1.65rem + 1px)
+    );
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.04),
+    inset 0 0 0 1px rgb(255 255 255 / 0.04),
+    0 1px 2px rgb(0 0 0 / 0.18);
+}
+
+[data-theme="dark"] .cherry-notes-field:focus {
+  background:
+    linear-gradient(rgb(12 10 9 / 0.96), rgb(12 10 9 / 0.96)),
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 1.65rem,
+      rgb(251 113 133 / 0.16) 1.65rem,
+      rgb(251 113 133 / 0.16) calc(1.65rem + 1px)
+    );
+}
+
+.cherry-label {
+  color: rgb(87 83 78);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+[data-theme="dark"] .cherry-label {
+  color: rgb(214 211 209);
+}
+
+.cherry-tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border: 1px solid;
+  border-radius: 0.5rem;
+  padding: 0.25rem 0.375rem 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.25rem;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.cherry-tag-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 12px rgb(41 37 36 / 0.08);
+}
+
+.cherry-tag-color-select {
+  max-width: 4.75rem;
+  border: 1px solid rgb(255 255 255 / 0.5);
+  border-radius: 0.375rem;
+  background: rgb(255 255 255 / 0.58);
+  padding: 0.125rem 0.25rem;
+  color: inherit;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  outline: none;
+}
+
+.cherry-tag-remove {
+  display: grid;
+  width: 1.25rem;
+  height: 1.25rem;
+  place-items: center;
+  border-radius: 0.375rem;
+  color: currentColor;
+  font-size: 1rem;
+  line-height: 1;
+  opacity: 0.62;
+  transition: background-color 150ms ease, opacity 150ms ease;
+}
+
+.cherry-tag-remove:hover {
+  background: rgb(255 255 255 / 0.62);
+  opacity: 1;
+}
+
+.cherry-tag-chip-neutral {
+  border-color: rgb(214 211 209);
+  background: rgb(245 245 244);
+  color: rgb(68 64 60);
+}
+
+.cherry-tag-chip-rose {
+  border-color: rgb(254 205 211);
+  background: rgb(255 241 242);
+  color: rgb(190 18 60);
+}
+
+.cherry-tag-chip-amber {
+  border-color: rgb(253 230 138);
+  background: rgb(255 251 235);
+  color: rgb(180 83 9);
+}
+
+.cherry-tag-chip-emerald {
+  border-color: rgb(167 243 208);
+  background: rgb(236 253 245);
+  color: rgb(4 120 87);
+}
+
+.cherry-tag-chip-sky {
+  border-color: rgb(186 230 253);
+  background: rgb(240 249 255);
+  color: rgb(3 105 161);
+}
+
+.cherry-tag-chip-violet {
+  border-color: rgb(221 214 254);
+  background: rgb(245 243 255);
+  color: rgb(109 40 217);
+}
+
+[data-theme="dark"] .cherry-tag-chip:hover {
+  box-shadow: 0 5px 14px rgb(0 0 0 / 0.28);
+}
+
+[data-theme="dark"] .cherry-tag-color-select {
+  border-color: rgb(255 255 255 / 0.08);
+  background: rgb(12 10 9 / 0.42);
+}
+
+[data-theme="dark"] .cherry-tag-remove:hover {
+  background: rgb(255 255 255 / 0.1);
+}
+
+[data-theme="dark"] .cherry-tag-chip-neutral {
+  border-color: rgb(68 64 60);
+  background: rgb(41 37 36);
+  color: rgb(214 211 209);
+}
+
+[data-theme="dark"] .cherry-tag-chip-rose {
+  border-color: rgb(136 19 55 / 0.72);
+  background: rgb(76 5 25 / 0.5);
+  color: rgb(253 164 175);
+}
+
+[data-theme="dark"] .cherry-tag-chip-amber {
+  border-color: rgb(146 64 14 / 0.72);
+  background: rgb(69 26 3 / 0.5);
+  color: rgb(252 211 77);
+}
+
+[data-theme="dark"] .cherry-tag-chip-emerald {
+  border-color: rgb(6 95 70 / 0.72);
+  background: rgb(2 44 34 / 0.5);
+  color: rgb(110 231 183);
+}
+
+[data-theme="dark"] .cherry-tag-chip-sky {
+  border-color: rgb(3 105 161 / 0.72);
+  background: rgb(8 47 73 / 0.5);
+  color: rgb(125 211 252);
+}
+
+[data-theme="dark"] .cherry-tag-chip-violet {
+  border-color: rgb(91 33 182 / 0.72);
+  background: rgb(46 16 101 / 0.5);
+  color: rgb(196 181 253);
+}
+
+.task-card-ghost {
+  opacity: 0.4;
+}
+
+.task-column-ghost {
+  opacity: 0.45;
+}
+
+.task-column-chosen {
+  transform: rotate(0.2deg);
+}
+
+.task-column-drag {
+  cursor: grabbing;
+  box-shadow: 0 22px 55px rgb(41 37 36 / 0.18);
+}
+
+[data-theme="dark"] .task-column-drag {
+  box-shadow: 0 22px 55px rgb(0 0 0 / 0.48);
+}
+
+.task-card-chosen {
+  transform: rotate(0.4deg);
+}
+
+.task-card-drag {
+  cursor: grabbing;
+  box-shadow: 0 18px 45px rgb(41 37 36 / 0.18);
+}
+
+[data-theme="dark"] .task-card-drag {
+  box-shadow: 0 18px 45px rgb(0 0 0 / 0.45);
+}
