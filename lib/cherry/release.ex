@@ -16,6 +16,25 @@ defmodule Cherry.Release do
   def bootstrap_owner do
     load_app()
 
+    {:ok, _, _} = Ecto.Migrator.with_repo(Cherry.Repo, fn _repo -> do_bootstrap_owner() end)
+  end
+
+  def rollback(repo, version) do
+    load_app()
+    {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :down, to: version))
+  end
+
+  defp repos do
+    Application.fetch_env!(@app, :ecto_repos)
+  end
+
+  defp load_app do
+    # Many platforms require SSL when connecting to the database
+    Application.ensure_all_started(:ssl)
+    Application.ensure_loaded(@app)
+  end
+
+  defp do_bootstrap_owner do
     email = required_env!("OWNER_EMAIL")
     password = required_env!("OWNER_PASSWORD")
     validate_owner_credentials!(email, password)
@@ -42,21 +61,6 @@ defmodule Cherry.Release do
         cherry auth login --url https://cherry.kubernao.org --token #{raw}
       """)
     end
-  end
-
-  def rollback(repo, version) do
-    load_app()
-    {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :down, to: version))
-  end
-
-  defp repos do
-    Application.fetch_env!(@app, :ecto_repos)
-  end
-
-  defp load_app do
-    # Many platforms require SSL when connecting to the database
-    Application.ensure_all_started(:ssl)
-    Application.ensure_loaded(@app)
   end
 
   defp required_env!(name) do
