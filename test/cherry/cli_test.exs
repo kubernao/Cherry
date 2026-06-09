@@ -33,6 +33,20 @@ defmodule Cherry.CLITest do
     assert Bitwise.band(mode, 0o777) == 0o600
   end
 
+  test "prints succinct agent help without requiring config" do
+    for args <- [[], ["--help"], ["-h"], ["help"]] do
+      assert {:ok, help} = Cherry.CLI.run(args)
+      assert help =~ "Cherry CLI - authenticated access"
+      assert help =~ "cherry auth login --url URL --token TOKEN"
+      assert help =~ "CHERRY_CONFIG_PATH"
+      assert help =~ "Add --json"
+      assert help =~ "cherry projects list"
+      assert help =~ "cherry tasks create"
+      assert help =~ "cherry search QUERY"
+      assert help =~ "URL/api/v1"
+    end
+  end
+
   test "reports missing config before API commands" do
     assert {:error, message} = Cherry.CLI.run(["projects", "list"])
     assert message =~ "not logged in"

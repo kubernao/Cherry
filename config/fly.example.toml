@@ -1,13 +1,15 @@
-app = 'cherry-kubernao'
-primary_region = 'yyz'
+app = 'your-fly-app'
+primary_region = 'your-region'
 
 [build]
 
 [env]
   DATABASE_PATH = '/data/cherry.db'
-  PHX_HOST = 'cherry.kubernao.org'
+  PHX_HOST = 'your.domain'
   PHX_SERVER = 'true'
   PORT = '4000'
+  # Optional: set when the CLI should use a different reachable URL than PHX_HOST.
+  # CHERRY_CLI_URL = 'https://your-fly-app.fly.dev'
 
 [[mounts]]
   source = 'cherry_data'

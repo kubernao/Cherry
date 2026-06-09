@@ -15,6 +15,11 @@ defmodule Cherry.CLI do
     end
   end
 
+  def run([]), do: {:ok, usage()}
+  def run(["--help"]), do: {:ok, usage()}
+  def run(["-h"]), do: {:ok, usage()}
+  def run(["help"]), do: {:ok, usage()}
+
   def run(["auth", "login" | args]) do
     {opts, _, _} = OptionParser.parse(args, strict: [url: :string, token: :string])
 
@@ -267,11 +272,39 @@ defmodule Cherry.CLI do
 
   defp usage do
     """
-    cherry auth login --url URL --token TOKEN
-    cherry projects list|create|show|archive
-    cherry tasks list|create|show|edit|move|done|archive
-    cherry search QUERY
-    cherry activity
+    Cherry CLI - authenticated access to the Cherry workspace API for agents.
+
+    Setup:
+      cherry auth login --url URL --token TOKEN
+      Stores credentials at ~/.config/cherry/config.json.
+      Set CHERRY_CONFIG_PATH to use a different credential file.
+
+    Output:
+      Add --json to read/write commands for machine-readable JSON.
+      Human output is compact tables or one-line status messages.
+
+    Projects:
+      cherry projects list [--archived] [--json]
+      cherry projects create --title TITLE [--description TEXT] [--json]
+      cherry projects show PROJECT_ID [--json]
+      cherry projects archive PROJECT_ID [--json]
+
+    Tasks:
+      cherry tasks list [--project PROJECT_ID] [--archived] [--json]
+      cherry tasks create --project PROJECT_ID --title TITLE [--column COLUMN_ID] [--body TEXT] [--priority low|normal|high|urgent] [--due YYYY-MM-DD] [--tags "a,b"] [--json]
+      cherry tasks show TASK_ID [--json]
+      cherry tasks edit TASK_ID [--title TITLE] [--body TEXT] [--priority low|normal|high|urgent] [--status STATUS] [--due YYYY-MM-DD] [--tags "a,b"] [--json]
+      cherry tasks move TASK_ID --column COLUMN_ID [--position N] [--json]
+      cherry tasks done TASK_ID [--json]
+      cherry tasks archive TASK_ID [--json]
+
+    Search and activity:
+      cherry search QUERY [--json]
+      cherry activity [--json]
+
+    Notes for agents:
+      IDs are numeric. API requests are sent to URL/api/v1 with Authorization: Bearer TOKEN.
+      If a command fails before making an API call, fix local CLI config with auth login.
     """
   end
 end

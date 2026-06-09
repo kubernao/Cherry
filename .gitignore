@@ -41,3 +41,9 @@ npm-debug.log
 # Database files
 *.db
 *.db-*
+
+# Local deployment configuration. Keep app names, domains, volumes,
+# and deployment-specific URLs out of the public repo.
+/fly.toml
+/config/fly.toml
+/config/*.local.*

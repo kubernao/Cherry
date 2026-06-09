@@ -100,7 +100,10 @@ OWNER_EMAIL=you@example.com OWNER_PASSWORD='a-long-private-password' /app/bin/ch
 For Fly.io:
 
 ```sh
-fly ssh console -a cherry-kubernao -C "env OWNER_EMAIL=you@example.com OWNER_PASSWORD='a-long-private-password' /app/bin/cherry eval 'Cherry.Release.bootstrap_owner()'"
+cp config/fly.example.toml config/fly.toml
+$EDITOR config/fly.toml
+fly deploy -c config/fly.toml
+fly ssh console -c config/fly.toml -C "env OWNER_EMAIL=you@example.com OWNER_PASSWORD='a-long-private-password' /app/bin/cherry eval 'Cherry.Release.bootstrap_owner()'"
 ```
 
 Save the printed token for CLI access. The bootstrap command refuses default credentials and will not create another owner if one already exists.

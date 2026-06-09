@@ -58,9 +58,14 @@ defmodule Cherry.Release do
         #{raw}
 
       Save it for the CLI:
-        cherry auth login --url https://cherry.kubernao.org --token #{raw}
+        cherry auth login --url #{cli_url()} --token #{raw}
       """)
     end
+  end
+
+  defp cli_url do
+    System.get_env("CHERRY_CLI_URL") ||
+      CherryWeb.Endpoint.url()
   end
 
   defp required_env!(name) do
