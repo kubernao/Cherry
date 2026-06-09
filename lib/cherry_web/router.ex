@@ -50,6 +50,7 @@ defmodule CherryWeb.Router do
 
     get "/projects", ProjectController, :index
     get "/projects/:id", ProjectController, :show
+    get "/columns", ColumnController, :index
     get "/tasks", TaskController, :index
     get "/tasks/:id", TaskController, :show
     get "/search", SearchController, :index
@@ -64,6 +65,10 @@ defmodule CherryWeb.Router do
     post "/projects/:id/archive", ProjectController, :archive
     post "/projects/:id/restore", ProjectController, :restore
     delete "/projects/:id", ProjectController, :delete
+    post "/columns", ColumnController, :create
+    patch "/columns/:id", ColumnController, :update
+    post "/columns/:id/move", ColumnController, :move
+    delete "/columns/:id", ColumnController, :delete
     post "/tasks", TaskController, :create
     patch "/tasks/:id", TaskController, :update
     post "/tasks/:id/move", TaskController, :move

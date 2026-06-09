@@ -41,10 +41,29 @@ defmodule Cherry.CLITest do
       assert help =~ "CHERRY_CONFIG_PATH"
       assert help =~ "Add --json"
       assert help =~ "cherry projects list"
+      assert help =~ "cherry projects edit"
+      assert help =~ "cherry columns create"
       assert help =~ "cherry tasks create"
+      assert help =~ "--tags-json"
       assert help =~ "cherry search QUERY"
       assert help =~ "URL/api/v1"
     end
+  end
+
+  test "rejects malformed tag json without requiring config" do
+    assert {:error, message} =
+             Cherry.CLI.run([
+               "tasks",
+               "create",
+               "--project",
+               "1",
+               "--title",
+               "Tagged",
+               "--tags-json",
+               "not-json"
+             ])
+
+    assert message =~ "invalid --tags-json"
   end
 
   test "reports missing config before API commands" do

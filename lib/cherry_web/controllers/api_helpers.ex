@@ -15,4 +15,10 @@ defmodule CherryWeb.ApiHelpers do
       end)
     end)
   end
+
+  def render_operation_error(conn, reason) do
+    conn
+    |> put_status(:unprocessable_entity)
+    |> json(%{error: %{code: "operation_failed", reason: to_string(reason)}})
+  end
 end

@@ -260,66 +260,62 @@ defmodule CherryWeb.DashboardLive do
               <article
                 :for={project <- @projects}
                 id={"project-card-#{project.id}"}
-                class="group rounded-xl border border-stone-200 bg-white/85 p-4 shadow-sm transition hover:-translate-y-1 hover:border-stone-300 hover:bg-white hover:shadow-md dark:border-stone-700 dark:bg-stone-900/85 dark:hover:border-stone-600 dark:hover:bg-stone-900"
+                class="group rounded-xl border border-stone-200 bg-white/85 shadow-sm transition hover:-translate-y-1 hover:border-stone-300 hover:bg-white hover:shadow-md dark:border-stone-700 dark:bg-stone-900/85 dark:hover:border-stone-600 dark:hover:bg-stone-900"
               >
-                <div class="flex items-start justify-between gap-3">
-                  <.link
-                    navigate={~p"/projects/#{project.id}"}
-                    id={"open-project-#{project.id}"}
-                    class="min-w-0 font-semibold text-stone-950 transition hover:text-rose-700 dark:text-stone-50 dark:hover:text-rose-300"
+                <.link
+                  navigate={~p"/projects/#{project.id}"}
+                  id={"open-project-#{project.id}"}
+                  class="block p-4 pb-3"
+                >
+                  <div class="flex items-start justify-between gap-3">
+                    <h2 class="min-w-0 font-semibold text-stone-950 transition group-hover:text-rose-700 dark:text-stone-50 dark:group-hover:text-rose-300">
+                      {project.title}
+                    </h2>
+                    <span class="rounded-md bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">
+                      {project.priority}
+                    </span>
+                  </div>
+                  <p
+                    id={"project-card-#{project.id}-body"}
+                    class="mt-3 line-clamp-3 min-h-12 text-sm leading-6 text-stone-600 dark:text-stone-300"
                   >
-                    {project.title}
-                  </.link>
-                  <span class="rounded-md bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">
-                    {project.priority}
-                  </span>
-                </div>
-                <p class="mt-3 line-clamp-3 min-h-12 text-sm leading-6 text-stone-600 dark:text-stone-300">
-                  {project.description}
-                </p>
-                <div class="mt-4 flex items-center justify-between">
-                  <p class="text-xs font-semibold uppercase text-stone-500 dark:text-stone-400">
+                    {project.description}
+                  </p>
+                  <p class="mt-4 text-xs font-semibold uppercase text-stone-500 dark:text-stone-400">
                     {project.status}
                   </p>
-                  <div class="flex items-center gap-1">
-                    <button
-                      id={"edit-project-#{project.id}"}
-                      type="button"
-                      class="rounded-md p-1.5 text-stone-400 transition hover:bg-stone-100 hover:text-stone-900 dark:hover:bg-stone-800 dark:hover:text-stone-100"
-                      phx-click="edit_project"
-                      phx-value-id={project.id}
-                      aria-label={"Edit #{project.title}"}
-                    >
-                      <.icon name="hero-pencil-square" class="size-4" />
-                    </button>
-                    <button
-                      id={"archive-project-#{project.id}"}
-                      type="button"
-                      class="rounded-md p-1.5 text-stone-400 transition hover:bg-amber-50 hover:text-amber-700 dark:hover:bg-amber-950/50 dark:hover:text-amber-300"
-                      phx-click="archive_project"
-                      phx-value-id={project.id}
-                      aria-label={"Archive #{project.title}"}
-                    >
-                      <.icon name="hero-archive-box" class="size-4" />
-                    </button>
-                    <button
-                      id={"delete-project-#{project.id}"}
-                      type="button"
-                      class="rounded-md p-1.5 text-stone-400 transition hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/50 dark:hover:text-rose-300"
-                      phx-click="confirm_delete_project"
-                      phx-value-id={project.id}
-                      aria-label={"Delete #{project.title}"}
-                    >
-                      <.icon name="hero-trash" class="size-4" />
-                    </button>
-                    <.link
-                      navigate={~p"/projects/#{project.id}"}
-                      class="rounded-md p-1.5 text-stone-300 transition group-hover:bg-stone-100 group-hover:text-stone-700 dark:text-stone-500 dark:group-hover:bg-stone-800 dark:group-hover:text-stone-100"
-                      aria-label={"Open #{project.title}"}
-                    >
-                      <.icon name="hero-arrow-right" class="size-4" />
-                    </.link>
-                  </div>
+                </.link>
+                <div class="flex items-center justify-end gap-1 border-t border-stone-100 px-4 py-3 dark:border-stone-800">
+                  <button
+                    id={"edit-project-#{project.id}"}
+                    type="button"
+                    class="rounded-md p-1.5 text-stone-400 transition hover:bg-stone-100 hover:text-stone-900 dark:hover:bg-stone-800 dark:hover:text-stone-100"
+                    phx-click="edit_project"
+                    phx-value-id={project.id}
+                    aria-label={"Edit #{project.title}"}
+                  >
+                    <.icon name="hero-pencil-square" class="size-4" />
+                  </button>
+                  <button
+                    id={"archive-project-#{project.id}"}
+                    type="button"
+                    class="rounded-md p-1.5 text-stone-400 transition hover:bg-amber-50 hover:text-amber-700 dark:hover:bg-amber-950/50 dark:hover:text-amber-300"
+                    phx-click="archive_project"
+                    phx-value-id={project.id}
+                    aria-label={"Archive #{project.title}"}
+                  >
+                    <.icon name="hero-archive-box" class="size-4" />
+                  </button>
+                  <button
+                    id={"delete-project-#{project.id}"}
+                    type="button"
+                    class="rounded-md p-1.5 text-stone-400 transition hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/50 dark:hover:text-rose-300"
+                    phx-click="confirm_delete_project"
+                    phx-value-id={project.id}
+                    aria-label={"Delete #{project.title}"}
+                  >
+                    <.icon name="hero-trash" class="size-4" />
+                  </button>
                 </div>
               </article>
             </div>

@@ -50,10 +50,27 @@ defmodule Cherry.CLI do
 
   def run(["projects", "create" | args]) do
     {opts, _, _} =
-      OptionParser.parse(args, strict: [title: :string, description: :string, json: :boolean])
+      OptionParser.parse(args,
+        strict: [
+          title: :string,
+          description: :string,
+          status: :string,
+          priority: :string,
+          json: :boolean
+        ]
+      )
 
     request(:post, "/projects",
-      json: %{project: %{title: opts[:title], description: opts[:description]}}
+      json: %{
+        project:
+          %{
+            title: opts[:title],
+            description: opts[:description],
+            status: opts[:status],
+            priority: opts[:priority]
+          }
+          |> drop_nil()
+      }
     )
     |> render(opts, fn body ->
       "Created project #{body["project"]["id"]}: #{body["project"]["title"]}"
@@ -67,11 +84,99 @@ defmodule Cherry.CLI do
     |> render(opts, fn body -> Jason.encode!(body["project"], pretty: true) end)
   end
 
+  def run(["projects", "edit", id | args]) do
+    {opts, _, _} =
+      OptionParser.parse(args,
+        strict: [
+          title: :string,
+          description: :string,
+          status: :string,
+          priority: :string,
+          json: :boolean
+        ]
+      )
+
+    project =
+      %{
+        title: opts[:title],
+        description: opts[:description],
+        status: opts[:status],
+        priority: opts[:priority]
+      }
+      |> drop_nil()
+
+    request(:patch, "/projects/#{id}", json: %{project: project})
+    |> render(opts, fn body ->
+      "Updated project #{body["project"]["id"]}: #{body["project"]["title"]}"
+    end)
+  end
+
   def run(["projects", "archive", id | args]) do
     {opts, _, _} = OptionParser.parse(args, strict: [json: :boolean])
 
     request(:post, "/projects/#{id}/archive")
     |> render(opts, fn body -> "Archived project #{body["project"]["id"]}" end)
+  end
+
+  def run(["projects", "restore", id | args]) do
+    {opts, _, _} = OptionParser.parse(args, strict: [json: :boolean])
+
+    request(:post, "/projects/#{id}/restore")
+    |> render(opts, fn body -> "Restored project #{body["project"]["id"]}" end)
+  end
+
+  def run(["projects", "delete", id | args]) do
+    {opts, _, _} = OptionParser.parse(args, strict: [json: :boolean])
+
+    request(:delete, "/projects/#{id}")
+    |> render(opts, fn _body -> "Deleted project #{id}" end)
+  end
+
+  def run(["columns", "list" | args]) do
+    {opts, _, _} = OptionParser.parse(args, strict: [project: :string, json: :boolean])
+
+    request(:get, "/columns", params: [project_id: opts[:project]])
+    |> render(opts, fn body ->
+      table(body["columns"], ["id", "project_id", "name", "position"])
+    end)
+  end
+
+  def run(["columns", "create" | args]) do
+    {opts, _, _} =
+      OptionParser.parse(args, strict: [project: :string, name: :string, json: :boolean])
+
+    request(:post, "/columns",
+      json: %{column: %{project_id: opts[:project], name: opts[:name]} |> drop_nil()}
+    )
+    |> render(opts, fn body ->
+      "Created column #{body["column"]["id"]}: #{body["column"]["name"]}"
+    end)
+  end
+
+  def run(["columns", "edit", id | args]) do
+    {opts, _, _} =
+      OptionParser.parse(args, strict: [name: :string, position: :integer, json: :boolean])
+
+    column = %{name: opts[:name], position: opts[:position]} |> drop_nil()
+
+    request(:patch, "/columns/#{id}", json: %{column: column})
+    |> render(opts, fn body ->
+      "Updated column #{body["column"]["id"]}: #{body["column"]["name"]}"
+    end)
+  end
+
+  def run(["columns", "move", id | args]) do
+    {opts, _, _} = OptionParser.parse(args, strict: [position: :integer, json: :boolean])
+
+    request(:post, "/columns/#{id}/move", json: %{position: opts[:position] || 0})
+    |> render(opts, fn body -> "Moved column #{body["column"]["id"]}" end)
+  end
+
+  def run(["columns", "delete", id | args]) do
+    {opts, _, _} = OptionParser.parse(args, strict: [json: :boolean])
+
+    request(:delete, "/columns/#{id}")
+    |> render(opts, fn _body -> "Deleted column #{id}" end)
   end
 
   def run(["tasks", "list" | args]) do
@@ -100,24 +205,29 @@ defmodule Cherry.CLI do
           priority: :string,
           due: :string,
           tags: :string,
+          tags_json: :string,
           json: :boolean
         ]
       )
 
-    task =
-      %{
-        project_id: opts[:project],
-        column_id: opts[:column],
-        title: opts[:title],
-        body: opts[:body],
-        priority: opts[:priority] || "normal",
-        due_date: opts[:due],
-        tags: opts[:tags]
-      }
-      |> drop_nil()
+    with {:ok, tags} <- parse_tags(opts) do
+      task =
+        %{
+          project_id: opts[:project],
+          column_id: opts[:column],
+          title: opts[:title],
+          body: opts[:body],
+          priority: opts[:priority] || "normal",
+          due_date: opts[:due],
+          tags: tags
+        }
+        |> drop_nil()
 
-    request(:post, "/tasks", json: %{task: task})
-    |> render(opts, fn body -> "Created task #{body["task"]["id"]}: #{body["task"]["title"]}" end)
+      request(:post, "/tasks", json: %{task: task})
+      |> render(opts, fn body ->
+        "Created task #{body["task"]["id"]}: #{body["task"]["title"]}"
+      end)
+    end
   end
 
   def run(["tasks", "show", id | args]) do
@@ -137,23 +247,28 @@ defmodule Cherry.CLI do
           status: :string,
           due: :string,
           tags: :string,
+          tags_json: :string,
           json: :boolean
         ]
       )
 
-    task =
-      %{
-        title: opts[:title],
-        body: opts[:body],
-        priority: opts[:priority],
-        status: opts[:status],
-        due_date: opts[:due],
-        tags: opts[:tags]
-      }
-      |> drop_nil()
+    with {:ok, tags} <- parse_tags(opts) do
+      task =
+        %{
+          title: opts[:title],
+          body: opts[:body],
+          priority: opts[:priority],
+          status: opts[:status],
+          due_date: opts[:due],
+          tags: tags
+        }
+        |> drop_nil()
 
-    request(:patch, "/tasks/#{id}", json: %{task: task})
-    |> render(opts, fn body -> "Updated task #{body["task"]["id"]}: #{body["task"]["title"]}" end)
+      request(:patch, "/tasks/#{id}", json: %{task: task})
+      |> render(opts, fn body ->
+        "Updated task #{body["task"]["id"]}: #{body["task"]["title"]}"
+      end)
+    end
   end
 
   def run(["tasks", "move", id | args]) do
@@ -270,6 +385,34 @@ defmodule Cherry.CLI do
 
   defp drop_nil(map), do: Map.reject(map, fn {_key, value} -> is_nil(value) or value == "" end)
 
+  defp parse_tags(opts) do
+    cond do
+      is_binary(opts[:tags_json]) ->
+        case Jason.decode(opts[:tags_json]) do
+          {:ok, tags} when is_list(tags) -> {:ok, tags}
+          _ -> {:error, "invalid --tags-json; expected a JSON array"}
+        end
+
+      is_binary(opts[:tags]) ->
+        tags =
+          opts[:tags]
+          |> String.split(",", trim: true)
+          |> Enum.map(&parse_tag_spec/1)
+
+        {:ok, tags}
+
+      true ->
+        {:ok, nil}
+    end
+  end
+
+  defp parse_tag_spec(spec) do
+    case String.split(spec, ":", parts: 2) do
+      [name, color] -> %{name: String.trim(name), color: String.trim(color)}
+      [name] -> String.trim(name)
+    end
+  end
+
   defp usage do
     """
     Cherry CLI - authenticated access to the Cherry workspace API for agents.
@@ -285,15 +428,25 @@ defmodule Cherry.CLI do
 
     Projects:
       cherry projects list [--archived] [--json]
-      cherry projects create --title TITLE [--description TEXT] [--json]
+      cherry projects create --title TITLE [--description TEXT] [--status active|paused|done] [--priority low|normal|high|urgent] [--json]
       cherry projects show PROJECT_ID [--json]
+      cherry projects edit PROJECT_ID [--title TITLE] [--description TEXT] [--status active|paused|done] [--priority low|normal|high|urgent] [--json]
       cherry projects archive PROJECT_ID [--json]
+      cherry projects restore PROJECT_ID [--json]
+      cherry projects delete PROJECT_ID [--json]
+
+    Columns:
+      cherry columns list --project PROJECT_ID [--json]
+      cherry columns create --project PROJECT_ID --name NAME [--json]
+      cherry columns edit COLUMN_ID [--name NAME] [--position N] [--json]
+      cherry columns move COLUMN_ID --position N [--json]
+      cherry columns delete COLUMN_ID [--json]
 
     Tasks:
       cherry tasks list [--project PROJECT_ID] [--archived] [--json]
-      cherry tasks create --project PROJECT_ID --title TITLE [--column COLUMN_ID] [--body TEXT] [--priority low|normal|high|urgent] [--due YYYY-MM-DD] [--tags "a,b"] [--json]
+      cherry tasks create --project PROJECT_ID --title TITLE [--column COLUMN_ID] [--body TEXT] [--priority low|normal|high|urgent] [--due YYYY-MM-DD] [--tags "a,b:sky"] [--tags-json JSON] [--json]
       cherry tasks show TASK_ID [--json]
-      cherry tasks edit TASK_ID [--title TITLE] [--body TEXT] [--priority low|normal|high|urgent] [--status STATUS] [--due YYYY-MM-DD] [--tags "a,b"] [--json]
+      cherry tasks edit TASK_ID [--title TITLE] [--body TEXT] [--priority low|normal|high|urgent] [--status STATUS] [--due YYYY-MM-DD] [--tags "a,b:sky"] [--tags-json JSON] [--json]
       cherry tasks move TASK_ID --column COLUMN_ID [--position N] [--json]
       cherry tasks done TASK_ID [--json]
       cherry tasks archive TASK_ID [--json]

@@ -51,6 +51,8 @@ defmodule CherryWeb.UiLiveTest do
     assert has_element?(view, "#new-project-button")
     refute has_element?(view, "#project-form")
     assert has_element?(view, "#project-card-#{project.id}")
+    assert has_element?(view, "#open-project-#{project.id} #project-card-#{project.id}-body")
+    refute has_element?(view, "#project-card-#{project.id} a[aria-label^='Open ']")
   end
 
   test "dashboard plus opens and closes new project modal", %{conn: conn} do
