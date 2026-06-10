@@ -2,6 +2,11 @@
 
 Cherry is a personal Notion-style workspace built with Phoenix LiveView, Ecto, and SQLite. The first release focuses on projects, kanban tasks, Markdown notes, search, an authenticated JSON API, and a CLI for agent workflows.
 
+The CLI for agents is primarily for having LLM research findings organized, or pulling things dynamically from different sources in easy to manage ways
+
+<img width="1297" height="918" alt="image" src="https://github.com/user-attachments/assets/6fa6d1b1-0816-4594-a74e-d492db19347d" />
+
+
 ## Local Setup
 
 ```sh
