@@ -164,6 +164,37 @@
   padding-left: 2.75rem;
 }
 
+.cherry-board-scroll {
+  overscroll-behavior-x: contain;
+  scroll-padding-inline: 0.75rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+.cherry-board-scroll::-webkit-scrollbar {
+  height: 0.75rem;
+}
+
+.cherry-board-scroll::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: rgb(231 229 228 / 0.62);
+}
+
+.cherry-board-scroll::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background: rgb(120 113 108 / 0.58);
+  background-clip: content-box;
+}
+
+[data-theme="dark"] .cherry-board-scroll::-webkit-scrollbar-track {
+  background: rgb(68 64 60 / 0.48);
+}
+
+[data-theme="dark"] .cherry-board-scroll::-webkit-scrollbar-thumb {
+  background: rgb(168 162 158 / 0.56);
+  background-clip: content-box;
+}
+
 .cherry-notes-field {
   min-height: 11rem;
   resize: vertical;

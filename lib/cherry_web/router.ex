@@ -34,10 +34,13 @@ defmodule CherryWeb.Router do
     post "/login", SessionController, :create
     delete "/logout", SessionController, :delete
     get "/health", HealthController, :show
+    get "/cli/install/:platform/:token", CliController, :install
   end
 
   scope "/", CherryWeb do
     pipe_through [:browser, :require_authenticated_user]
+
+    post "/cli/link", CliController, :create
 
     live_session :authenticated, on_mount: [{CherryWeb.UserAuth, :ensure_authenticated}] do
       live "/", DashboardLive, :index

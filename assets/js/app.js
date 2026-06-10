@@ -48,6 +48,18 @@ window.addEventListener("phx:set-theme", event => setTheme(event.target.dataset.
 window.addEventListener("click", event => {
   const themeButton = event.target.closest("[data-phx-theme]")
   if(themeButton) setTheme(themeButton.dataset.phxTheme)
+
+  const copyButton = event.target.closest("[data-copy-target]")
+  if(copyButton) {
+    const target = document.querySelector(copyButton.dataset.copyTarget)
+    const text = target?.textContent?.trim()
+    if(!text || !navigator.clipboard) return
+
+    navigator.clipboard.writeText(text).then(() => {
+      copyButton.dataset.copied = "true"
+      window.setTimeout(() => delete copyButton.dataset.copied, 1600)
+    })
+  }
 })
 
 const Hooks = {

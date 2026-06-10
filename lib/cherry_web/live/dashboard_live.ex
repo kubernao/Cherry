@@ -188,11 +188,15 @@ defmodule CherryWeb.DashboardLive do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} current_user={@current_user}>
-      <section class="space-y-6" phx-window-keydown="close_modal" phx-key="escape">
+      <section
+        class="min-w-0 space-y-5 sm:space-y-6"
+        phx-window-keydown="close_modal"
+        phx-key="escape"
+      >
         <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div>
+          <div class="min-w-0">
             <p class="text-sm font-semibold text-rose-700 dark:text-rose-300">Workspace</p>
-            <h1 class="mt-1 text-3xl font-semibold tracking-normal text-stone-950 dark:text-stone-50">
+            <h1 class="mt-1 break-words text-2xl font-semibold tracking-normal text-stone-950 sm:text-3xl dark:text-stone-50">
               Projects
             </h1>
             <p class="mt-2 max-w-xl text-sm leading-6 text-stone-600 dark:text-stone-300">
@@ -216,12 +220,12 @@ defmodule CherryWeb.DashboardLive do
             <button
               id="new-project-button"
               type="button"
-              class="inline-flex items-center justify-center gap-2 rounded-xl bg-stone-950 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-stone-900/20 transition hover:-translate-y-0.5 hover:bg-stone-800 focus:outline-none focus:ring-2 focus:ring-rose-300 dark:bg-stone-50 dark:text-stone-950 dark:hover:bg-white"
+              class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-stone-950 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-stone-900/20 transition hover:-translate-y-0.5 hover:bg-stone-800 focus:outline-none focus:ring-2 focus:ring-rose-300 sm:w-auto dark:bg-stone-50 dark:text-stone-950 dark:hover:bg-white"
               phx-click="open_modal"
               phx-value-modal="new_project"
             >
               <.icon name="hero-plus" class="size-4" />
-              <span class="hidden sm:inline">New project</span>
+              <span>New project</span>
             </button>
           </div>
         </div>
@@ -380,7 +384,7 @@ defmodule CherryWeb.DashboardLive do
         <div
           :if={@active_modal in [:new_project, :edit_project, :delete_project]}
           id="dashboard-modal-backdrop"
-          class="fixed inset-0 z-50 grid place-items-center overflow-y-auto px-4 py-8"
+          class="fixed inset-0 z-50 grid place-items-end overflow-y-auto px-2 py-2 sm:place-items-center sm:px-4 sm:py-8"
         >
           <button
             type="button"
@@ -391,12 +395,12 @@ defmodule CherryWeb.DashboardLive do
           </button>
           <section
             id="dashboard-modal"
-            class="relative w-full max-w-2xl overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-2xl shadow-stone-950/20 dark:border-stone-700 dark:bg-stone-900 dark:shadow-black/50"
+            class="relative max-h-[calc(100dvh-1rem)] w-full max-w-2xl overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-2xl shadow-stone-950/20 dark:border-stone-700 dark:bg-stone-900 dark:shadow-black/50"
           >
-            <div class="border-b border-stone-100 bg-stone-50/80 px-6 py-5 dark:border-stone-800 dark:bg-stone-950/70">
+            <div class="border-b border-stone-100 bg-stone-50/80 px-4 py-4 sm:px-6 sm:py-5 dark:border-stone-800 dark:bg-stone-950/70">
               <div class="flex items-start justify-between gap-4">
-                <div class="flex min-w-0 gap-4">
-                  <span class="grid size-11 shrink-0 place-items-center rounded-xl bg-rose-50 text-rose-700 ring-1 ring-rose-100 dark:bg-rose-950/40 dark:text-rose-300 dark:ring-rose-900/60">
+                <div class="flex min-w-0 gap-3 sm:gap-4">
+                  <span class="hidden size-11 shrink-0 place-items-center rounded-xl bg-rose-50 text-rose-700 ring-1 ring-rose-100 sm:grid dark:bg-rose-950/40 dark:text-rose-300 dark:ring-rose-900/60">
                     <.icon
                       name={
                         case @active_modal do
@@ -408,11 +412,11 @@ defmodule CherryWeb.DashboardLive do
                       class="size-5"
                     />
                   </span>
-                  <div>
+                  <div class="min-w-0">
                     <p class="text-xs font-semibold uppercase text-rose-700 dark:text-rose-300">
                       Project
                     </p>
-                    <h2 class="mt-1 text-xl font-semibold text-stone-950 dark:text-stone-50">
+                    <h2 class="mt-1 break-words text-lg font-semibold text-stone-950 sm:text-xl dark:text-stone-50">
                       <%= case @active_modal do %>
                         <% :new_project -> %>
                           Create a new project
@@ -453,7 +457,7 @@ defmodule CherryWeb.DashboardLive do
               phx-submit="create_project"
               class="cherry-form"
             >
-              <div class="space-y-5 p-6">
+              <div class="max-h-[calc(100dvh-12rem)] space-y-5 overflow-y-auto p-4 sm:p-6">
                 <.input
                   field={@project_form[:title]}
                   label="Project title"
@@ -484,17 +488,17 @@ defmodule CherryWeb.DashboardLive do
                   />
                 </div>
               </div>
-              <div class="flex items-center justify-end gap-2 border-t border-stone-100 bg-stone-50/60 px-6 py-4 dark:border-stone-800 dark:bg-stone-950/40">
+              <div class="flex flex-col-reverse gap-2 border-t border-stone-100 bg-stone-50/60 px-4 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-6 dark:border-stone-800 dark:bg-stone-950/40">
                 <button
                   type="button"
-                  class="rounded-lg px-4 py-2 text-sm font-semibold text-stone-500 transition hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100"
+                  class="w-full rounded-lg px-4 py-2 text-sm font-semibold text-stone-500 transition hover:bg-stone-100 hover:text-stone-900 sm:w-auto dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100"
                   phx-click="close_modal"
                 >
                   Cancel
                 </button>
                 <button
                   id="create-project-button"
-                  class="rounded-lg bg-stone-950 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-stone-900/20 transition hover:-translate-y-0.5 hover:bg-stone-800 focus:outline-none focus:ring-2 focus:ring-rose-300 dark:bg-stone-50 dark:text-stone-950 dark:hover:bg-white"
+                  class="w-full rounded-lg bg-stone-950 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-stone-900/20 transition hover:-translate-y-0.5 hover:bg-stone-800 focus:outline-none focus:ring-2 focus:ring-rose-300 sm:w-auto dark:bg-stone-50 dark:text-stone-950 dark:hover:bg-white"
                   type="submit"
                 >
                   Create project
@@ -510,7 +514,7 @@ defmodule CherryWeb.DashboardLive do
               class="cherry-form"
             >
               <input type="hidden" name="project[id]" value={@project_form[:id].value} />
-              <div class="space-y-5 p-6">
+              <div class="max-h-[calc(100dvh-12rem)] space-y-5 overflow-y-auto p-4 sm:p-6">
                 <.input
                   field={@project_form[:title]}
                   label="Project title"
@@ -541,27 +545,27 @@ defmodule CherryWeb.DashboardLive do
                   />
                 </div>
               </div>
-              <div class="flex items-center justify-between gap-2 border-t border-stone-100 bg-stone-50/60 px-6 py-4 dark:border-stone-800 dark:bg-stone-950/40">
+              <div class="flex flex-col gap-2 border-t border-stone-100 bg-stone-50/60 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 dark:border-stone-800 dark:bg-stone-950/40">
                 <button
                   id={"archive-edit-project-#{@editing_project.id}"}
                   type="button"
-                  class="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-50 dark:text-amber-300 dark:hover:bg-amber-950/50"
+                  class="inline-flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-50 sm:w-auto dark:text-amber-300 dark:hover:bg-amber-950/50"
                   phx-click="archive_project"
                   phx-value-id={@editing_project.id}
                 >
                   <.icon name="hero-archive-box" class="size-4" /> Archive
                 </button>
-                <div class="flex items-center gap-2">
+                <div class="flex w-full flex-col-reverse gap-2 sm:w-auto sm:flex-row sm:items-center">
                   <button
                     type="button"
-                    class="rounded-lg px-4 py-2 text-sm font-semibold text-stone-500 transition hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100"
+                    class="w-full rounded-lg px-4 py-2 text-sm font-semibold text-stone-500 transition hover:bg-stone-100 hover:text-stone-900 sm:w-auto dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100"
                     phx-click="close_modal"
                   >
                     Cancel
                   </button>
                   <button
                     id="update-project-button"
-                    class="rounded-lg bg-stone-950 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-stone-900/20 transition hover:-translate-y-0.5 hover:bg-stone-800 focus:outline-none focus:ring-2 focus:ring-rose-300 dark:bg-stone-50 dark:text-stone-950 dark:hover:bg-white"
+                    class="w-full rounded-lg bg-stone-950 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-stone-900/20 transition hover:-translate-y-0.5 hover:bg-stone-800 focus:outline-none focus:ring-2 focus:ring-rose-300 sm:w-auto dark:bg-stone-50 dark:text-stone-950 dark:hover:bg-white"
                     type="submit"
                   >
                     Save project
@@ -571,7 +575,7 @@ defmodule CherryWeb.DashboardLive do
             </.form>
 
             <div :if={@active_modal == :delete_project} id="delete-project-confirmation">
-              <div class="space-y-4 p-6">
+              <div class="max-h-[calc(100dvh-12rem)] space-y-4 overflow-y-auto p-4 sm:p-6">
                 <p class="text-sm leading-6 text-stone-600 dark:text-stone-300">
                   This will permanently delete
                   <span class="font-semibold text-stone-950 dark:text-stone-50">
@@ -580,10 +584,10 @@ defmodule CherryWeb.DashboardLive do
                   along with its columns and tasks.
                 </p>
               </div>
-              <div class="flex items-center justify-end gap-2 border-t border-stone-100 bg-stone-50/60 px-6 py-4 dark:border-stone-800 dark:bg-stone-950/40">
+              <div class="flex flex-col-reverse gap-2 border-t border-stone-100 bg-stone-50/60 px-4 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-6 dark:border-stone-800 dark:bg-stone-950/40">
                 <button
                   type="button"
-                  class="rounded-lg px-4 py-2 text-sm font-semibold text-stone-500 transition hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100"
+                  class="w-full rounded-lg px-4 py-2 text-sm font-semibold text-stone-500 transition hover:bg-stone-100 hover:text-stone-900 sm:w-auto dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100"
                   phx-click="close_modal"
                 >
                   Cancel
@@ -591,7 +595,7 @@ defmodule CherryWeb.DashboardLive do
                 <button
                   id="confirm-delete-project-button"
                   type="button"
-                  class="rounded-lg bg-rose-700 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-rose-900/20 transition hover:-translate-y-0.5 hover:bg-rose-800 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                  class="w-full rounded-lg bg-rose-700 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-rose-900/20 transition hover:-translate-y-0.5 hover:bg-rose-800 focus:outline-none focus:ring-2 focus:ring-rose-300 sm:w-auto"
                   phx-click="delete_project"
                   phx-value-id={@deleting_project.id}
                 >

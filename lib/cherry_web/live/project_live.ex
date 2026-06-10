@@ -418,9 +418,13 @@ defmodule CherryWeb.ProjectLive do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} current_user={@current_user} wide>
-      <section class="space-y-6" phx-window-keydown="close_modal" phx-key="escape">
+      <section
+        class="min-w-0 space-y-5 sm:space-y-6"
+        phx-window-keydown="close_modal"
+        phx-key="escape"
+      >
         <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
+          <div class="min-w-0">
             <.link
               navigate={~p"/"}
               id="back-to-projects"
@@ -428,7 +432,7 @@ defmodule CherryWeb.ProjectLive do
             >
               <.icon name="hero-arrow-left" class="size-4" /> Projects
             </.link>
-            <h1 class="mt-3 text-3xl font-semibold tracking-normal text-stone-950 dark:text-stone-50">
+            <h1 class="mt-3 break-words text-2xl font-semibold tracking-normal text-stone-950 sm:text-3xl dark:text-stone-50">
               {@project.title}
             </h1>
             <div class="mt-3 flex flex-wrap gap-2 text-xs font-medium">
@@ -444,16 +448,16 @@ defmodule CherryWeb.ProjectLive do
             </div>
           </div>
 
-          <div class="flex items-center gap-3">
+          <div class="flex w-full flex-col gap-3 sm:flex-row sm:items-center lg:w-auto">
             <div
               id="project-view-switcher"
-              class="grid grid-cols-3 rounded-xl border border-stone-200 bg-white/70 p-1 shadow-sm dark:border-stone-700 dark:bg-stone-900/70"
+              class="grid w-full grid-cols-3 rounded-xl border border-stone-200 bg-white/70 p-1 shadow-sm sm:w-auto dark:border-stone-700 dark:bg-stone-900/70"
             >
               <button
                 :for={{label, view} <- [{"Board", "board"}, {"List", "list"}, {"Dates", "calendar"}]}
                 id={"view-#{view}"}
                 class={[
-                  "rounded-lg px-4 py-2 text-sm font-semibold transition",
+                  "rounded-lg px-3 py-2 text-sm font-semibold transition sm:px-4",
                   @view == String.to_existing_atom(view) &&
                     "bg-stone-950 text-white shadow-sm shadow-stone-900/20 dark:bg-stone-50 dark:text-stone-950",
                   @view != String.to_existing_atom(view) &&
@@ -466,11 +470,11 @@ defmodule CherryWeb.ProjectLive do
               </button>
             </div>
 
-            <div class="relative">
+            <div class="relative sm:shrink-0">
               <button
                 id="project-waffle"
                 type="button"
-                class="grid size-11 place-items-center rounded-xl border border-stone-200 bg-white/80 text-stone-600 shadow-sm transition hover:-translate-y-0.5 hover:border-stone-300 hover:text-stone-950 dark:border-stone-700 dark:bg-stone-900/80 dark:text-stone-300 dark:hover:border-stone-600 dark:hover:text-stone-50"
+                class="grid h-11 w-full place-items-center rounded-xl border border-stone-200 bg-white/80 text-stone-600 shadow-sm transition hover:-translate-y-0.5 hover:border-stone-300 hover:text-stone-950 sm:size-11 dark:border-stone-700 dark:bg-stone-900/80 dark:text-stone-300 dark:hover:border-stone-600 dark:hover:text-stone-50"
                 phx-click="toggle_project_menu"
                 aria-label="Open project tools"
               >
@@ -480,7 +484,7 @@ defmodule CherryWeb.ProjectLive do
               <div
                 :if={@project_menu_open?}
                 id="project-tools-menu"
-                class="absolute right-0 z-30 mt-2 w-56 overflow-hidden rounded-xl border border-stone-200 bg-white p-1 shadow-xl shadow-stone-900/10 dark:border-stone-700 dark:bg-stone-900 dark:shadow-black/30"
+                class="absolute right-0 z-30 mt-2 w-full min-w-56 overflow-hidden rounded-xl border border-stone-200 bg-white p-1 shadow-xl shadow-stone-900/10 sm:w-56 dark:border-stone-700 dark:bg-stone-900 dark:shadow-black/30"
               >
                 <button
                   :for={
@@ -509,14 +513,14 @@ defmodule CherryWeb.ProjectLive do
             :if={@view == :board}
             id="task-board"
             phx-hook="TaskBoard"
-            class="flex gap-4 overflow-x-auto pb-4"
+            class="cherry-board-scroll flex snap-x gap-3 overflow-x-auto pb-4 sm:gap-4"
           >
             <section
               :for={column <- @columns}
               id={"column-#{column.id}"}
               data-board-column
               data-column-id={column.id}
-              class="flex max-h-[calc(100vh-14rem)] min-h-[28rem] w-[19rem] shrink-0 flex-col rounded-xl border border-stone-200 bg-stone-100/80 p-3 shadow-sm dark:border-stone-700 dark:bg-stone-900/70"
+              class="flex max-h-[calc(100dvh-13rem)] min-h-[24rem] w-[min(19rem,calc(100vw-2rem))] shrink-0 snap-start flex-col rounded-xl border border-stone-200 bg-stone-100/80 p-3 shadow-sm sm:max-h-[calc(100vh-14rem)] sm:min-h-[28rem] sm:w-[19rem] dark:border-stone-700 dark:bg-stone-900/70"
             >
               <div class="mb-3 flex items-center justify-between gap-3">
                 <h2 class="text-sm font-semibold text-stone-800 dark:text-stone-100">
@@ -550,7 +554,7 @@ defmodule CherryWeb.ProjectLive do
                     <div class="min-w-0 flex-1">
                       <h3
                         id={"task-#{task.id}-title"}
-                        class="text-sm font-semibold leading-5 text-stone-950 dark:text-stone-50"
+                        class="break-words text-sm font-semibold leading-5 text-stone-950 dark:text-stone-50"
                       >
                         {task.title}
                       </h3>
@@ -617,9 +621,9 @@ defmodule CherryWeb.ProjectLive do
           <div
             :if={@view == :list}
             id="task-list-view"
-            class="overflow-hidden rounded-xl border border-stone-200 bg-white/85 shadow-sm dark:border-stone-700 dark:bg-stone-900/85"
+            class="overflow-x-auto rounded-xl border border-stone-200 bg-white/85 shadow-sm dark:border-stone-700 dark:bg-stone-900/85"
           >
-            <table class="w-full text-left text-sm">
+            <table class="min-w-[42rem] w-full text-left text-sm">
               <thead class="bg-stone-100/80 text-xs font-semibold uppercase text-stone-500 dark:bg-stone-800/80 dark:text-stone-400">
                 <tr>
                   <th class="p-3">Task</th>
@@ -660,9 +664,11 @@ defmodule CherryWeb.ProjectLive do
               <div
                 :for={task <- Enum.filter(@tasks, & &1.due_date)}
                 id={"task-date-#{task.id}"}
-                class="flex items-center justify-between rounded-lg border border-stone-100 bg-stone-50/80 p-3 dark:border-stone-800 dark:bg-stone-950/80"
+                class="flex flex-col gap-1 rounded-lg border border-stone-100 bg-stone-50/80 p-3 sm:flex-row sm:items-center sm:justify-between dark:border-stone-800 dark:bg-stone-950/80"
               >
-                <span class="font-medium text-stone-900 dark:text-stone-50">{task.title}</span>
+                <span class="break-words font-medium text-stone-900 dark:text-stone-50">
+                  {task.title}
+                </span>
                 <span class="text-sm text-stone-500 dark:text-stone-400">{task.due_date}</span>
               </div>
             </div>
@@ -672,7 +678,7 @@ defmodule CherryWeb.ProjectLive do
         <div
           :if={@active_modal}
           id="project-modal-backdrop"
-          class="fixed inset-0 z-50 grid place-items-center overflow-y-auto px-4 py-8"
+          class="fixed inset-0 z-50 grid place-items-end overflow-y-auto px-2 py-2 sm:place-items-center sm:px-4 sm:py-8"
         >
           <button
             type="button"
@@ -683,12 +689,12 @@ defmodule CherryWeb.ProjectLive do
           </button>
           <section
             id="project-modal"
-            class="relative max-h-[88vh] w-full max-w-4xl overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-2xl shadow-stone-950/20 dark:border-stone-700 dark:bg-stone-900 dark:shadow-black/50"
+            class="relative max-h-[calc(100dvh-1rem)] w-full max-w-4xl overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-2xl shadow-stone-950/20 sm:max-h-[88vh] dark:border-stone-700 dark:bg-stone-900 dark:shadow-black/50"
           >
-            <div class="border-b border-stone-100 bg-stone-50/80 px-6 py-5 dark:border-stone-800 dark:bg-stone-950/70">
+            <div class="border-b border-stone-100 bg-stone-50/80 px-4 py-4 sm:px-6 sm:py-5 dark:border-stone-800 dark:bg-stone-950/70">
               <div class="flex items-start justify-between gap-4">
-                <div class="flex min-w-0 gap-4">
-                  <span class="grid size-11 shrink-0 place-items-center rounded-xl bg-rose-50 text-rose-700 ring-1 ring-rose-100 dark:bg-rose-950/40 dark:text-rose-300 dark:ring-rose-900/60">
+                <div class="flex min-w-0 gap-3 sm:gap-4">
+                  <span class="hidden size-11 shrink-0 place-items-center rounded-xl bg-rose-50 text-rose-700 ring-1 ring-rose-100 sm:grid dark:bg-rose-950/40 dark:text-rose-300 dark:ring-rose-900/60">
                     <.icon
                       name={
                         case @active_modal do
@@ -703,11 +709,11 @@ defmodule CherryWeb.ProjectLive do
                       class="size-5"
                     />
                   </span>
-                  <div>
+                  <div class="min-w-0">
                     <p class="text-xs font-semibold uppercase text-rose-700 dark:text-rose-300">
                       Project tools
                     </p>
-                    <h2 class="mt-1 text-xl font-semibold text-stone-950 dark:text-stone-50">
+                    <h2 class="mt-1 break-words text-lg font-semibold text-stone-950 sm:text-xl dark:text-stone-50">
                       <%= case @active_modal do %>
                         <% :new_task -> %>
                           New task
@@ -723,7 +729,7 @@ defmodule CherryWeb.ProjectLive do
                           Recent activity
                       <% end %>
                     </h2>
-                    <p class="mt-1 max-w-2xl text-sm leading-6 text-stone-500 dark:text-stone-400">
+                    <p class="mt-1 hidden max-w-2xl text-sm leading-6 text-stone-500 sm:block dark:text-stone-400">
                       <%= case @active_modal do %>
                         <% :new_task -> %>
                           Capture the work, place it on the board, and add the context needed to move it forward.
@@ -756,7 +762,7 @@ defmodule CherryWeb.ProjectLive do
             <div
               :if={@active_modal == :new_task}
               id="new-task-modal"
-              class="max-h-[calc(88vh-8.5rem)] overflow-y-auto"
+              class="max-h-[calc(100dvh-8rem)] overflow-y-auto sm:max-h-[calc(88vh-8.5rem)]"
             >
               <.form
                 id="task-form"
@@ -765,8 +771,8 @@ defmodule CherryWeb.ProjectLive do
                 phx-hook="TaskForm"
                 class="cherry-form"
               >
-                <div class="grid gap-0 lg:grid-cols-[minmax(0,1fr)_20rem]">
-                  <div class="space-y-5 p-6">
+                <div class="grid min-w-0 gap-0 lg:grid-cols-[minmax(0,1fr)_20rem]">
+                  <div class="space-y-5 p-4 sm:p-6">
                     <.input
                       field={@task_form[:title]}
                       label="Task title"
@@ -781,7 +787,7 @@ defmodule CherryWeb.ProjectLive do
                       class="cherry-field cherry-notes-field"
                     />
                   </div>
-                  <aside class="space-y-4 border-t border-stone-100 bg-stone-50/70 p-6 dark:border-stone-800 dark:bg-stone-950/40 lg:border-l lg:border-t-0">
+                  <aside class="space-y-4 border-t border-stone-100 bg-stone-50/70 p-4 sm:p-6 dark:border-stone-800 dark:bg-stone-950/40 lg:border-l lg:border-t-0">
                     <div>
                       <h3 class="text-sm font-semibold text-stone-950 dark:text-stone-50">
                         Board details
@@ -815,17 +821,17 @@ defmodule CherryWeb.ProjectLive do
                     </div>
                   </aside>
                 </div>
-                <div class="flex items-center justify-end gap-2 border-t border-stone-100 bg-white px-6 py-4 dark:border-stone-800 dark:bg-stone-900">
+                <div class="flex flex-col-reverse gap-2 border-t border-stone-100 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-6 dark:border-stone-800 dark:bg-stone-900">
                   <button
                     type="button"
-                    class="rounded-lg px-4 py-2 text-sm font-semibold text-stone-500 transition hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100"
+                    class="w-full rounded-lg px-4 py-2 text-sm font-semibold text-stone-500 transition hover:bg-stone-100 hover:text-stone-900 sm:w-auto dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100"
                     phx-click="close_modal"
                   >
                     Cancel
                   </button>
                   <button
                     id="create-task-button"
-                    class="rounded-lg bg-stone-950 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-stone-900/20 transition hover:-translate-y-0.5 hover:bg-stone-800 focus:outline-none focus:ring-2 focus:ring-rose-300 dark:bg-stone-50 dark:text-stone-950 dark:hover:bg-white"
+                    class="w-full rounded-lg bg-stone-950 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-stone-900/20 transition hover:-translate-y-0.5 hover:bg-stone-800 focus:outline-none focus:ring-2 focus:ring-rose-300 sm:w-auto dark:bg-stone-50 dark:text-stone-950 dark:hover:bg-white"
                     type="submit"
                   >
                     Create task
@@ -837,17 +843,17 @@ defmodule CherryWeb.ProjectLive do
             <div
               :if={@active_modal == :view_task}
               id="view-task-modal"
-              class="max-h-[calc(88vh-8.5rem)] overflow-y-auto"
+              class="max-h-[calc(100dvh-8rem)] overflow-y-auto sm:max-h-[calc(88vh-8.5rem)]"
             >
-              <div :if={@viewing_task} class="grid gap-0 lg:grid-cols-[minmax(0,1fr)_20rem]">
-                <div class="space-y-5 p-6">
+              <div :if={@viewing_task} class="grid min-w-0 gap-0 lg:grid-cols-[minmax(0,1fr)_20rem]">
+                <div class="space-y-5 p-4 sm:p-6">
                   <div>
                     <p class="text-xs font-semibold uppercase text-stone-500 dark:text-stone-400">
                       Task
                     </p>
                     <h3
                       id={"view-task-#{@viewing_task.id}-title"}
-                      class="mt-1 text-2xl font-semibold tracking-normal text-stone-950 dark:text-stone-50"
+                      class="mt-1 break-words text-xl font-semibold tracking-normal text-stone-950 sm:text-2xl dark:text-stone-50"
                     >
                       {@viewing_task.title}
                     </h3>
@@ -865,7 +871,7 @@ defmodule CherryWeb.ProjectLive do
                   </div>
                 </div>
 
-                <aside class="space-y-4 border-t border-stone-100 bg-stone-50/70 p-6 dark:border-stone-800 dark:bg-stone-950/40 lg:border-l lg:border-t-0">
+                <aside class="space-y-4 border-t border-stone-100 bg-stone-50/70 p-4 sm:p-6 dark:border-stone-800 dark:bg-stone-950/40 lg:border-l lg:border-t-0">
                   <div>
                     <h3 class="text-sm font-semibold text-stone-950 dark:text-stone-50">
                       Task settings
@@ -924,10 +930,10 @@ defmodule CherryWeb.ProjectLive do
                 </aside>
               </div>
 
-              <div class="flex items-center justify-end gap-2 border-t border-stone-100 bg-white px-6 py-4 dark:border-stone-800 dark:bg-stone-900">
+              <div class="flex flex-col-reverse gap-2 border-t border-stone-100 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-6 dark:border-stone-800 dark:bg-stone-900">
                 <button
                   type="button"
-                  class="rounded-lg px-4 py-2 text-sm font-semibold text-stone-500 transition hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100"
+                  class="w-full rounded-lg px-4 py-2 text-sm font-semibold text-stone-500 transition hover:bg-stone-100 hover:text-stone-900 sm:w-auto dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100"
                   phx-click="close_modal"
                 >
                   Close
@@ -935,7 +941,7 @@ defmodule CherryWeb.ProjectLive do
                 <button
                   id="edit-viewed-task-button"
                   type="button"
-                  class="inline-flex items-center gap-2 rounded-lg bg-stone-950 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-stone-900/20 transition hover:-translate-y-0.5 hover:bg-stone-800 focus:outline-none focus:ring-2 focus:ring-rose-300 dark:bg-stone-50 dark:text-stone-950 dark:hover:bg-white"
+                  class="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-stone-950 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-stone-900/20 transition hover:-translate-y-0.5 hover:bg-stone-800 focus:outline-none focus:ring-2 focus:ring-rose-300 sm:w-auto dark:bg-stone-50 dark:text-stone-950 dark:hover:bg-white"
                   phx-click="edit_task"
                   phx-value-task_id={@viewing_task && @viewing_task.id}
                 >
@@ -947,7 +953,7 @@ defmodule CherryWeb.ProjectLive do
             <div
               :if={@active_modal == :edit_task}
               id="edit-task-modal"
-              class="max-h-[calc(88vh-8.5rem)] overflow-y-auto"
+              class="max-h-[calc(100dvh-8rem)] overflow-y-auto sm:max-h-[calc(88vh-8.5rem)]"
             >
               <.form
                 :if={@edit_task_form}
@@ -956,8 +962,8 @@ defmodule CherryWeb.ProjectLive do
                 phx-submit="update_task"
                 class="cherry-form"
               >
-                <div class="grid gap-0 lg:grid-cols-[minmax(0,1fr)_20rem]">
-                  <div class="space-y-5 p-6">
+                <div class="grid min-w-0 gap-0 lg:grid-cols-[minmax(0,1fr)_20rem]">
+                  <div class="space-y-5 p-4 sm:p-6">
                     <.input field={@edit_task_form[:id]} type="hidden" />
                     <.input
                       field={@edit_task_form[:title]}
@@ -973,7 +979,7 @@ defmodule CherryWeb.ProjectLive do
                       class="cherry-field cherry-notes-field"
                     />
                   </div>
-                  <aside class="space-y-4 border-t border-stone-100 bg-stone-50/70 p-6 dark:border-stone-800 dark:bg-stone-950/40 lg:border-l lg:border-t-0">
+                  <aside class="space-y-4 border-t border-stone-100 bg-stone-50/70 p-4 sm:p-6 dark:border-stone-800 dark:bg-stone-950/40 lg:border-l lg:border-t-0">
                     <div>
                       <h3 class="text-sm font-semibold text-stone-950 dark:text-stone-50">
                         Task settings
@@ -1014,17 +1020,17 @@ defmodule CherryWeb.ProjectLive do
                     </div>
                   </aside>
                 </div>
-                <div class="flex items-center justify-end gap-2 border-t border-stone-100 bg-white px-6 py-4 dark:border-stone-800 dark:bg-stone-900">
+                <div class="flex flex-col-reverse gap-2 border-t border-stone-100 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-6 dark:border-stone-800 dark:bg-stone-900">
                   <button
                     type="button"
-                    class="rounded-lg px-4 py-2 text-sm font-semibold text-stone-500 transition hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100"
+                    class="w-full rounded-lg px-4 py-2 text-sm font-semibold text-stone-500 transition hover:bg-stone-100 hover:text-stone-900 sm:w-auto dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100"
                     phx-click="close_modal"
                   >
                     Cancel
                   </button>
                   <button
                     id="update-task-button"
-                    class="rounded-lg bg-stone-950 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-stone-900/20 transition hover:-translate-y-0.5 hover:bg-stone-800 focus:outline-none focus:ring-2 focus:ring-rose-300 dark:bg-stone-50 dark:text-stone-950 dark:hover:bg-white"
+                    class="w-full rounded-lg bg-stone-950 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-stone-900/20 transition hover:-translate-y-0.5 hover:bg-stone-800 focus:outline-none focus:ring-2 focus:ring-rose-300 sm:w-auto dark:bg-stone-50 dark:text-stone-950 dark:hover:bg-white"
                     type="submit"
                   >
                     Save changes
@@ -1036,10 +1042,10 @@ defmodule CherryWeb.ProjectLive do
             <div
               :if={@active_modal == :columns}
               id="columns-modal"
-              class="max-h-[calc(88vh-8.5rem)] overflow-y-auto"
+              class="max-h-[calc(100dvh-8rem)] overflow-y-auto sm:max-h-[calc(88vh-8.5rem)]"
             >
-              <div class="grid gap-0 lg:grid-cols-[minmax(0,1fr)_20rem]">
-                <div class="space-y-3 p-6">
+              <div class="grid min-w-0 gap-0 lg:grid-cols-[minmax(0,1fr)_20rem]">
+                <div class="space-y-3 p-4 sm:p-6">
                   <div>
                     <h3 class="text-sm font-semibold text-stone-950 dark:text-stone-50">
                       Board columns
@@ -1130,7 +1136,7 @@ defmodule CherryWeb.ProjectLive do
                   </div>
                 </div>
 
-                <aside class="space-y-4 border-t border-stone-100 bg-stone-50/70 p-6 dark:border-stone-800 dark:bg-stone-950/40 lg:border-l lg:border-t-0">
+                <aside class="space-y-4 border-t border-stone-100 bg-stone-50/70 p-4 sm:p-6 dark:border-stone-800 dark:bg-stone-950/40 lg:border-l lg:border-t-0">
                   <div>
                     <h3 class="text-sm font-semibold text-stone-950 dark:text-stone-50">
                       Add a column
@@ -1165,7 +1171,10 @@ defmodule CherryWeb.ProjectLive do
               </div>
             </div>
 
-            <div :if={@active_modal == :notes} class="p-5">
+            <div
+              :if={@active_modal == :notes}
+              class="max-h-[calc(100dvh-8rem)] overflow-y-auto p-4 sm:p-5"
+            >
               <div
                 id="project-notes"
                 class="max-w-none rounded-xl border border-stone-200 bg-stone-50/80 p-4 text-sm leading-6 text-stone-600 dark:border-stone-800 dark:bg-stone-950/60 dark:text-stone-300 [&_h1]:mb-2 [&_h1]:text-lg [&_h1]:font-semibold [&_h1]:text-stone-950 dark:[&_h1]:text-stone-50 [&_h2]:mb-2 [&_h2]:font-semibold [&_h2]:text-stone-950 dark:[&_h2]:text-stone-50 [&_p]:mb-3 [&_strong]:font-semibold [&_strong]:text-stone-900 dark:[&_strong]:text-stone-100"
@@ -1174,7 +1183,11 @@ defmodule CherryWeb.ProjectLive do
               </div>
             </div>
 
-            <div :if={@active_modal == :activity} id="recent-activity" class="space-y-2 p-5">
+            <div
+              :if={@active_modal == :activity}
+              id="recent-activity"
+              class="max-h-[calc(100dvh-8rem)] space-y-2 overflow-y-auto p-4 sm:p-5"
+            >
               <p
                 :for={event <- @activity}
                 class="rounded-lg bg-stone-50 p-2 text-xs text-stone-600 dark:bg-stone-950 dark:text-stone-300"
