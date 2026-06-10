@@ -218,14 +218,6 @@ defmodule CherryWeb.ProjectLive do
     move_task(socket, task, column_id, position)
   end
 
-  def handle_event("done_task", %{"id" => id}, socket) do
-    {:ok, _task} =
-      Workspace.get_task!(id)
-      |> Workspace.complete_task(actor: "web", user_id: socket.assigns.current_user.id)
-
-    {:noreply, load_board(socket)}
-  end
-
   def handle_event("archive_task", %{"id" => id}, socket) do
     {:ok, _task} =
       Workspace.get_task!(id)
@@ -589,18 +581,7 @@ defmodule CherryWeb.ProjectLive do
                     </span>
                   </div>
 
-                  <div class="mt-3 flex justify-end gap-1 border-t border-stone-100 pt-3 dark:border-stone-800">
-                    <button
-                      id={"task-#{task.id}-done"}
-                      type="button"
-                      data-no-drag
-                      class="rounded-md p-1.5 text-stone-400 transition hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-emerald-950/50 dark:hover:text-emerald-300"
-                      phx-click="done_task"
-                      phx-value-id={task.id}
-                      aria-label={"Mark #{task.title} done"}
-                    >
-                      <.icon name="hero-check" class="size-4" />
-                    </button>
+                  <div class="mt-3 flex justify-end border-t border-stone-100 pt-3 dark:border-stone-800">
                     <button
                       id={"task-#{task.id}-archive"}
                       type="button"

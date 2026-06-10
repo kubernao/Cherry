@@ -289,7 +289,7 @@ defmodule CherryWeb.DashboardLive do
                     {project.status}
                   </p>
                 </.link>
-                <div class="flex items-center justify-end gap-1 border-t border-stone-100 px-4 py-3 dark:border-stone-800">
+                <div class="flex items-center justify-between gap-2 border-t border-stone-100 px-4 py-3 dark:border-stone-800">
                   <button
                     id={"edit-project-#{project.id}"}
                     type="button"
@@ -301,24 +301,15 @@ defmodule CherryWeb.DashboardLive do
                     <.icon name="hero-pencil-square" class="size-4" />
                   </button>
                   <button
-                    id={"archive-project-#{project.id}"}
-                    type="button"
-                    class="rounded-md p-1.5 text-stone-400 transition hover:bg-amber-50 hover:text-amber-700 dark:hover:bg-amber-950/50 dark:hover:text-amber-300"
-                    phx-click="archive_project"
-                    phx-value-id={project.id}
-                    aria-label={"Archive #{project.title}"}
-                  >
-                    <.icon name="hero-archive-box" class="size-4" />
-                  </button>
-                  <button
                     id={"delete-project-#{project.id}"}
                     type="button"
-                    class="rounded-md p-1.5 text-stone-400 transition hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/50 dark:hover:text-rose-300"
+                    class="inline-flex items-center gap-1.5 rounded-md border border-rose-200 px-2.5 py-1.5 text-xs font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50 dark:border-rose-900/70 dark:text-rose-300 dark:hover:border-rose-800 dark:hover:bg-rose-950/50"
                     phx-click="confirm_delete_project"
                     phx-value-id={project.id}
                     aria-label={"Delete #{project.title}"}
                   >
                     <.icon name="hero-trash" class="size-4" />
+                    <span>Delete</span>
                   </button>
                 </div>
               </article>

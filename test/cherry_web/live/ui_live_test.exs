@@ -80,7 +80,7 @@ defmodule CherryWeb.UiLiveTest do
 
     assert has_element?(view, "#open-project-#{project.id}")
     assert has_element?(view, "#edit-project-#{project.id}")
-    assert has_element?(view, "#archive-project-#{project.id}")
+    refute has_element?(view, "#archive-project-#{project.id}")
     assert has_element?(view, "#delete-project-#{project.id}")
 
     view |> element("#edit-project-#{project.id}") |> render_click()
@@ -104,7 +104,10 @@ defmodule CherryWeb.UiLiveTest do
     assert project.priority == "urgent"
     assert has_element?(view, "#project-card-#{project.id}")
 
-    view |> element("#archive-project-#{project.id}") |> render_click()
+    view |> element("#edit-project-#{project.id}") |> render_click()
+    assert has_element?(view, "#archive-edit-project-#{project.id}")
+
+    view |> element("#archive-edit-project-#{project.id}") |> render_click()
     assert Workspace.get_project!(project.id).archived
     assert has_element?(view, "#archived-project-#{project.id}")
 
@@ -131,6 +134,7 @@ defmodule CherryWeb.UiLiveTest do
     assert has_element?(view, "#column-#{backlog.id}-tasks")
     assert has_element?(view, "#task-#{first.id}")
     refute has_element?(view, "#task-#{first.id}-move")
+    refute has_element?(view, "#task-#{first.id}-done")
     assert has_element?(view, "#project-waffle")
     assert has_element?(view, "#project-view-switcher")
 
