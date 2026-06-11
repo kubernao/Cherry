@@ -595,7 +595,7 @@ defmodule CherryWeb.ProjectLive do
                       phx-value-id={task.id}
                       aria-label={"Archive #{task.title}"}
                     >
-                      <.icon name="hero-archive-box" class="size-4" />
+                      <.icon name="hero-trash" class="size-4" />
                     </button>
                   </div>
                 </article>
