@@ -2,6 +2,7 @@ defmodule CherryWeb.DashboardLive do
   use CherryWeb, :live_view
 
   alias Cherry.Workspace
+  alias CherryWeb.Markdown
 
   def mount(_params, _session, socket) do
     {:ok,
@@ -269,7 +270,7 @@ defmodule CherryWeb.DashboardLive do
                 <.link
                   navigate={~p"/projects/#{project.id}"}
                   id={"open-project-#{project.id}"}
-                  class="block p-4 pb-3"
+                  class="block p-4 pb-2"
                 >
                   <div class="flex items-start justify-between gap-3">
                     <h2 class="min-w-0 font-semibold text-stone-950 transition group-hover:text-rose-700 dark:text-stone-50 dark:group-hover:text-rose-300">
@@ -279,16 +280,16 @@ defmodule CherryWeb.DashboardLive do
                       {project.priority}
                     </span>
                   </div>
-                  <p
-                    id={"project-card-#{project.id}-body"}
-                    class="mt-3 line-clamp-3 min-h-12 text-sm leading-6 text-stone-600 dark:text-stone-300"
-                  >
-                    {project.description}
-                  </p>
-                  <p class="mt-4 text-xs font-semibold uppercase text-stone-500 dark:text-stone-400">
+                  <p class="mt-3 text-xs font-semibold uppercase text-stone-500 dark:text-stone-400">
                     {project.status}
                   </p>
                 </.link>
+                <div
+                  id={"project-card-#{project.id}-body"}
+                  class="line-clamp-3 min-h-12 px-4 pb-4 text-sm leading-6 text-stone-600 dark:text-stone-300 [&_p]:text-stone-600 dark:[&_p]:text-stone-300"
+                >
+                  {Markdown.render(project.description)}
+                </div>
                 <div class="flex items-center justify-between gap-2 border-t border-stone-100 px-4 py-3 dark:border-stone-800">
                   <button
                     id={"edit-project-#{project.id}"}

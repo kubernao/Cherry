@@ -556,12 +556,16 @@ defmodule CherryWeb.ProjectLive do
                     </span>
                   </div>
 
-                  <p
+                  <div
                     id={"task-#{task.id}-body"}
-                    class="mt-2 min-h-6 line-clamp-3 text-sm leading-6 text-stone-600 dark:text-stone-300"
+                    class="mt-2 min-h-6 line-clamp-3 text-sm leading-6 text-stone-600 dark:text-stone-300 [&_p]:text-stone-600 dark:[&_p]:text-stone-300"
                   >
-                    {task.body || "Double-click to view task"}
-                  </p>
+                    <%= if task.body in [nil, ""] do %>
+                      Double-click to view task
+                    <% else %>
+                      {Markdown.render(task.body)}
+                    <% end %>
+                  </div>
 
                   <div class="mt-3 flex flex-wrap items-center gap-2 text-xs text-stone-500 dark:text-stone-400">
                     <span

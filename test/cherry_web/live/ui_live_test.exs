@@ -17,7 +17,7 @@ defmodule CherryWeb.UiLiveTest do
     {:ok, project} =
       Workspace.create_project(%{
         "title" => "Client Portal",
-        "description" => "# Notes\nKeep scope close."
+        "description" => "# Notes\nKeep scope close at https://example.com/project."
       })
 
     [backlog, next | _] = Workspace.list_columns(project.id)
@@ -27,6 +27,7 @@ defmodule CherryWeb.UiLiveTest do
         "project_id" => project.id,
         "column_id" => backlog.id,
         "title" => "Draft scope",
+        "body" => "Review https://example.com/task before the call.",
         "tags" => "writing"
       })
 
@@ -51,7 +52,13 @@ defmodule CherryWeb.UiLiveTest do
     assert has_element?(view, "#new-project-button")
     refute has_element?(view, "#project-form")
     assert has_element?(view, "#project-card-#{project.id}")
-    assert has_element?(view, "#open-project-#{project.id} #project-card-#{project.id}-body")
+    assert has_element?(view, "#project-card-#{project.id}-body")
+
+    assert has_element?(
+             view,
+             "#project-card-#{project.id}-body a[href='https://example.com/project']"
+           )
+
     refute has_element?(view, "#project-card-#{project.id} a[aria-label^='Open ']")
   end
 
@@ -133,6 +140,7 @@ defmodule CherryWeb.UiLiveTest do
     assert has_element?(view, "#task-board")
     assert has_element?(view, "#column-#{backlog.id}-tasks")
     assert has_element?(view, "#task-#{first.id}")
+    assert has_element?(view, "#task-#{first.id}-body a[href='https://example.com/task']")
     refute has_element?(view, "#task-#{first.id}-move")
     refute has_element?(view, "#task-#{first.id}-done")
     assert has_element?(view, "#project-waffle")
@@ -220,6 +228,7 @@ defmodule CherryWeb.UiLiveTest do
     assert has_element?(view, "#project-modal")
     assert has_element?(view, "#view-task-modal")
     assert has_element?(view, "#view-task-#{first.id}-title")
+    assert has_element?(view, "#view-task-#{first.id}-body a[href='https://example.com/task']")
     assert has_element?(view, "#view-task-meta")
     assert has_element?(view, "#edit-viewed-task-button")
     refute has_element?(view, "#edit-task-form")

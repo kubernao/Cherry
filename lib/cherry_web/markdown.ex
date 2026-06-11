@@ -36,5 +36,29 @@ defmodule CherryWeb.Markdown do
       ~r/`([^`]+)`/,
       "<code class=\"rounded bg-zinc-100 px-1 py-0.5 text-xs\">\\1</code>"
     )
+    |> autolink_urls()
+  end
+
+  defp autolink_urls(text) do
+    Regex.replace(~r"https?://[^\s<]+", text, fn url ->
+      {url, trailing} = split_trailing_punctuation(url, "")
+
+      ~s(<a href="#{url}" target="_blank" rel="noopener noreferrer" class="font-medium text-rose-700 underline decoration-rose-300 underline-offset-2 transition hover:text-rose-900 dark:text-rose-300 dark:decoration-rose-700 dark:hover:text-rose-100">#{url}</a>) <>
+        trailing
+    end)
+  end
+
+  defp split_trailing_punctuation("", trailing), do: {"", trailing}
+
+  defp split_trailing_punctuation(url, trailing) do
+    size = byte_size(url)
+    rest = binary_part(url, 0, size - 1)
+    last = binary_part(url, size - 1, 1)
+
+    if last in [".", ",", ";", ":", "!", "?", ")", "]", "}"] do
+      split_trailing_punctuation(rest, last <> trailing)
+    else
+      {url, trailing}
+    end
   end
 end
