@@ -50,6 +50,7 @@ defmodule CherryWeb.UiLiveTest do
     assert has_element?(view, "#project-search-form")
     assert has_element?(view, "#project-search.cherry-search-field")
     assert has_element?(view, "#new-project-button")
+    assert has_element?(view, "#recently-deleted-card")
     refute has_element?(view, "#project-form")
     assert has_element?(view, "#project-card-#{project.id}")
     assert has_element?(view, "#project-card-#{project.id}-body")
@@ -60,6 +61,22 @@ defmodule CherryWeb.UiLiveTest do
            )
 
     refute has_element?(view, "#project-card-#{project.id} a[aria-label^='Open ']")
+  end
+
+  test "dashboard restore card opens empty recently deleted modal", %{conn: conn} do
+    {conn, _user} = log_in(conn)
+    project_with_tasks()
+
+    {:ok, view, _html} = live(conn, ~p"/")
+
+    view |> element("#recently-deleted-card") |> render_click()
+
+    assert has_element?(view, "#dashboard-modal")
+    assert has_element?(view, "#restore-deleted-modal")
+    assert has_element?(view, "#recently-deleted-empty")
+
+    view |> element("#close-dashboard-modal") |> render_click()
+    refute has_element?(view, "#dashboard-modal")
   end
 
   test "dashboard plus opens and closes new project modal", %{conn: conn} do
@@ -127,8 +144,39 @@ defmodule CherryWeb.UiLiveTest do
 
     view |> element("#confirm-delete-project-button") |> render_click()
     assert_raise Ecto.NoResultsError, fn -> Workspace.get_project!(project.id) end
-    assert_raise Ecto.NoResultsError, fn -> Workspace.get_task!(task.id) end
+    assert Workspace.get_project!(project.id, include_deleted: true).deleted_at
+    assert Workspace.get_task!(task.id).id == task.id
     refute has_element?(view, "#project-card-#{project.id}")
+
+    view |> element("#recently-deleted-card") |> render_click()
+    assert has_element?(view, "#restore-deleted-modal")
+    assert has_element?(view, "#deleted-project-#{project.id}")
+
+    view |> element("#restore-deleted-project-#{project.id}") |> render_click()
+    assert Workspace.get_project!(project.id).id == project.id
+    assert has_element?(view, "#project-card-#{project.id}")
+  end
+
+  test "deleted task cards can be restored from the dashboard", %{conn: conn} do
+    {conn, _user} = log_in(conn)
+    %{project: project, first: first} = project_with_tasks()
+
+    {:ok, view, _html} = live(conn, ~p"/projects/#{project.id}")
+
+    view |> element("#task-#{first.id}-archive") |> render_click()
+    assert_raise Ecto.NoResultsError, fn -> Workspace.get_task!(first.id) end
+    refute has_element?(view, "#task-#{first.id}")
+
+    {:ok, dashboard, _html} = live(conn, ~p"/")
+
+    dashboard |> element("#recently-deleted-card") |> render_click()
+    assert has_element?(dashboard, "#deleted-task-#{first.id}")
+
+    dashboard |> element("#restore-deleted-task-#{first.id}") |> render_click()
+    assert Workspace.get_task!(first.id).id == first.id
+
+    {:ok, project_view, _html} = live(conn, ~p"/projects/#{project.id}")
+    assert has_element?(project_view, "#task-#{first.id}")
   end
 
   test "project board renders simplified columns, cards, menu, and alternate views", %{conn: conn} do

@@ -5,22 +5,25 @@ defmodule Cherry.Workspace do
   alias Cherry.Workspace.{ActivityEvent, Column, Project, Tag, Task, TaskLink}
 
   @default_columns ["Backlog", "Next", "Doing", "Done"]
+  @deleted_retention_days 5
 
   def list_projects(opts \\ []) do
     archived = Keyword.get(opts, :archived, false)
 
     Project
     |> where([p], p.archived == ^archived)
+    |> where([p], is_nil(p.deleted_at))
     |> order_by([p], asc: p.title)
     |> Repo.all()
   end
 
-  def get_project!(id_or_slug) do
+  def get_project!(id_or_slug, opts \\ []) do
     Project
     |> where([p], p.id == ^parse_id(id_or_slug) or p.slug == ^to_string(id_or_slug))
+    |> maybe_include_deleted_project(Keyword.get(opts, :include_deleted, false))
     |> preload(
       columns: ^from(c in Column, order_by: c.position),
-      tasks: ^from(t in Task, order_by: t.position)
+      tasks: ^from(t in Task, where: is_nil(t.deleted_at), order_by: t.position)
     )
     |> Repo.one!()
   end
@@ -52,18 +55,17 @@ defmodule Cherry.Workspace do
   end
 
   def restore_project(%Project{} = project, opts \\ []) do
-    update_project(project, %{archived: false}, Keyword.put(opts, :action, "restore"))
+    with {:ok, project} <-
+           project
+           |> Ecto.Changeset.change(archived: false, deleted_at: nil)
+           |> Repo.update() do
+      log!("restore", project, Keyword.put(opts, :action, "restore"))
+      {:ok, project}
+    end
   end
 
   def delete_project(%Project{} = project, opts \\ []) do
-    Repo.transaction(fn ->
-      with {:ok, project} <- Repo.delete(project) do
-        log!("delete", project, opts)
-        project
-      else
-        {:error, changeset} -> Repo.rollback(changeset)
-      end
-    end)
+    soft_delete_project(project, utc_now(), opts)
   end
 
   def list_columns(project_id),
@@ -167,18 +169,22 @@ defmodule Cherry.Workspace do
   def list_tasks(opts \\ []) do
     query =
       Task
-      |> where([t], t.archived == ^Keyword.get(opts, :archived, false))
+      |> join(:inner, [t], p in assoc(t, :project))
+      |> where([t, p], is_nil(t.deleted_at) and is_nil(p.deleted_at))
+      |> where([t, _p], t.archived == ^Keyword.get(opts, :archived, false))
       |> maybe_project(Keyword.get(opts, :project_id))
       |> maybe_due(Keyword.get(opts, :due))
-      |> order_by([t], asc: t.position)
+      |> order_by([t, _p], asc: t.position)
       |> preload([:project, :column, :tags])
 
     Repo.all(query)
   end
 
-  def get_task!(id),
+  def get_task!(id, opts \\ []),
     do:
-      Repo.get!(Task, id)
+      Task
+      |> maybe_include_deleted_task(Keyword.get(opts, :include_deleted, false))
+      |> Repo.get!(id)
       |> Repo.preload([:project, :column, :tags, :blocking_links, :blocked_by_links])
 
   def change_task(task \\ %Task{}, attrs \\ %{}) do
@@ -249,6 +255,69 @@ defmodule Cherry.Workspace do
     update_task(task, %{archived: true}, Keyword.put(opts, :action, "archive"))
   end
 
+  def delete_task(%Task{} = task, opts \\ []) do
+    Repo.transaction(fn ->
+      with {:ok, task} <- task |> Ecto.Changeset.change(deleted_at: utc_now()) |> Repo.update() do
+        normalize_column_positions(task.column_id)
+        task = get_task!(task.id, include_deleted: true)
+        log!("delete", task, opts)
+        task
+      else
+        {:error, changeset} -> Repo.rollback(changeset)
+      end
+    end)
+  end
+
+  def restore_task(%Task{} = task, opts \\ []) do
+    with {:ok, task} <-
+           task
+           |> Ecto.Changeset.change(deleted_at: nil)
+           |> Repo.update() do
+      normalize_column_positions(task.column_id)
+      task = get_task!(task.id)
+      log!("restore", task, Keyword.put(opts, :action, "restore"))
+      {:ok, task}
+    end
+  end
+
+  def list_recently_deleted(opts \\ []) do
+    since = Keyword.get(opts, :since, deleted_cutoff())
+
+    projects =
+      Repo.all(
+        from p in Project,
+          where: not is_nil(p.deleted_at) and p.deleted_at > ^since,
+          order_by: [desc: p.deleted_at],
+          limit: 20
+      )
+
+    tasks =
+      Repo.all(
+        from t in Task,
+          join: p in assoc(t, :project),
+          join: c in assoc(t, :column),
+          where:
+            not is_nil(t.deleted_at) and t.deleted_at > ^since and
+              is_nil(p.deleted_at),
+          order_by: [desc: t.deleted_at],
+          preload: [project: p, column: c],
+          limit: 50
+      )
+
+    %{projects: projects, tasks: tasks}
+  end
+
+  def purge_deleted_items(now \\ utc_now()) do
+    cutoff = deleted_cutoff(now)
+
+    Repo.transaction(fn ->
+      {task_count, _} = Repo.delete_all(from t in Task, where: t.deleted_at <= ^cutoff)
+      {project_count, _} = Repo.delete_all(from p in Project, where: p.deleted_at <= ^cutoff)
+
+      %{projects: project_count, tasks: task_count}
+    end)
+  end
+
   def link_tasks(source_id, target_id, kind \\ "blocks", opts \\ []) do
     with {:ok, link} <-
            %TaskLink{}
@@ -270,18 +339,22 @@ defmodule Cherry.Workspace do
       Repo.all(
         from p in Project,
           where:
-            like(fragment("lower(?)", p.title), ^pattern) or
-              like(fragment("lower(coalesce(?, ''))", p.description), ^pattern),
+            is_nil(p.deleted_at) and
+              (like(fragment("lower(?)", p.title), ^pattern) or
+                 like(fragment("lower(coalesce(?, ''))", p.description), ^pattern)),
           limit: 20
       )
 
     tasks =
       Repo.all(
         from t in Task,
+          join: p in assoc(t, :project),
+          join: c in assoc(t, :column),
           where:
-            like(fragment("lower(?)", t.title), ^pattern) or
-              like(fragment("lower(coalesce(?, ''))", t.body), ^pattern),
-          preload: [:project, :column],
+            is_nil(t.deleted_at) and is_nil(p.deleted_at) and
+              (like(fragment("lower(?)", t.title), ^pattern) or
+                 like(fragment("lower(coalesce(?, ''))", t.body), ^pattern)),
+          preload: [project: p, column: c],
           limit: 50
       )
 
@@ -319,7 +392,13 @@ defmodule Cherry.Workspace do
   end
 
   defp maybe_project(query, nil), do: query
-  defp maybe_project(query, project_id), do: where(query, [t], t.project_id == ^project_id)
+  defp maybe_project(query, project_id), do: where(query, [t, _p], t.project_id == ^project_id)
+
+  defp maybe_include_deleted_project(query, true), do: query
+  defp maybe_include_deleted_project(query, false), do: where(query, [p], is_nil(p.deleted_at))
+
+  defp maybe_include_deleted_task(query, true), do: query
+  defp maybe_include_deleted_task(query, false), do: where(query, [t], is_nil(t.deleted_at))
 
   defp maybe_due(query, nil), do: query
 
@@ -458,7 +537,7 @@ defmodule Cherry.Workspace do
   defp column_tasks(column_id) do
     Repo.all(
       from t in Task,
-        where: t.column_id == ^column_id and t.archived == false,
+        where: t.column_id == ^column_id and t.archived == false and is_nil(t.deleted_at),
         order_by: [asc: t.position, asc: t.updated_at, asc: t.id]
     )
   end
@@ -477,7 +556,8 @@ defmodule Cherry.Workspace do
     next_position =
       Repo.one(
         from t in Task,
-          where: t.column_id == ^destination_column_id and t.archived == false,
+          where:
+            t.column_id == ^destination_column_id and t.archived == false and is_nil(t.deleted_at),
           select: max(t.position)
       ) || -1
 
@@ -517,6 +597,22 @@ defmodule Cherry.Workspace do
       |> Ecto.Changeset.force_change(:position, position)
       |> Repo.update!()
     end)
+  end
+
+  defp soft_delete_project(%Project{} = project, deleted_at, opts) do
+    with {:ok, project} <-
+           project |> Ecto.Changeset.change(deleted_at: deleted_at) |> Repo.update() do
+      log!("delete", project, opts)
+      {:ok, project}
+    end
+  end
+
+  defp deleted_cutoff(now \\ utc_now()) do
+    DateTime.add(now, -@deleted_retention_days, :day)
+  end
+
+  defp utc_now do
+    DateTime.utc_now() |> DateTime.truncate(:second)
   end
 
   defp log!(action, entity, opts) do

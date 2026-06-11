@@ -14,6 +14,7 @@ defmodule Cherry.Workspace.Task do
     field :priority, :string, default: "normal"
     field :due_date, :date
     field :archived, :boolean, default: false
+    field :deleted_at, :utc_datetime
     field :position, :integer
 
     belongs_to :project, Project

@@ -1,7 +1,7 @@
 defmodule Cherry.WorkspaceTest do
   use Cherry.DataCase
 
-  alias Cherry.Workspace
+  alias Cherry.{Repo, Workspace}
 
   test "creates projects with default columns and tasks with tags" do
     assert {:ok, project} =
@@ -28,7 +28,7 @@ defmodule Cherry.WorkspaceTest do
     assert found_task.id == task.id
   end
 
-  test "updates, archives, restores, and deletes projects" do
+  test "updates, archives, restores, and soft deletes projects" do
     {:ok, project} = Workspace.create_project(%{"title" => "Ops"})
 
     assert {:ok, project} =
@@ -50,8 +50,73 @@ defmodule Cherry.WorkspaceTest do
     assert {:ok, project} = Workspace.restore_project(project)
     refute project.archived
 
-    assert {:ok, _project} = Workspace.delete_project(project)
+    assert {:ok, deleted_project} = Workspace.delete_project(project)
+    assert deleted_project.deleted_at
     assert_raise Ecto.NoResultsError, fn -> Workspace.get_project!(project.id) end
+
+    assert Workspace.get_project!(project.id, include_deleted: true).deleted_at
+    assert Workspace.list_projects() == []
+
+    assert %{projects: [recoverable], tasks: []} = Workspace.list_recently_deleted()
+    assert recoverable.id == project.id
+
+    assert {:ok, restored_project} = Workspace.restore_project(deleted_project)
+    refute restored_project.deleted_at
+    assert Workspace.get_project!(project.id).id == project.id
+  end
+
+  test "soft deletes, restores, and purges task cards" do
+    {:ok, project} = Workspace.create_project(%{"title" => "Board"})
+
+    {:ok, task} =
+      Workspace.create_task(%{
+        "project_id" => project.id,
+        "title" => "Recover me"
+      })
+
+    assert {:ok, deleted_task} = Workspace.delete_task(task)
+    assert deleted_task.deleted_at
+    assert_raise Ecto.NoResultsError, fn -> Workspace.get_task!(task.id) end
+
+    assert %{tasks: [recoverable_task]} = Workspace.list_recently_deleted()
+    assert recoverable_task.id == task.id
+
+    assert {:ok, restored_task} = Workspace.restore_task(deleted_task)
+    refute restored_task.deleted_at
+    assert Workspace.get_task!(task.id).id == task.id
+
+    assert {:ok, deleted_task} = Workspace.delete_task(restored_task)
+
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    old_deleted_at = DateTime.add(now, -6, :day)
+
+    deleted_task
+    |> Ecto.Changeset.change(deleted_at: old_deleted_at)
+    |> Repo.update!()
+
+    assert {:ok, %{tasks: 1, projects: 0}} = Workspace.purge_deleted_items(now)
+
+    assert_raise Ecto.NoResultsError, fn ->
+      Workspace.get_task!(task.id, include_deleted: true)
+    end
+  end
+
+  test "purges projects after the recently deleted retention window" do
+    {:ok, project} = Workspace.create_project(%{"title" => "Expired"})
+    assert {:ok, deleted_project} = Workspace.delete_project(project)
+
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    old_deleted_at = DateTime.add(now, -6, :day)
+
+    deleted_project
+    |> Ecto.Changeset.change(deleted_at: old_deleted_at)
+    |> Repo.update!()
+
+    assert {:ok, %{projects: 1, tasks: 0}} = Workspace.purge_deleted_items(now)
+
+    assert_raise Ecto.NoResultsError, fn ->
+      Workspace.get_project!(project.id, include_deleted: true)
+    end
   end
 
   test "creates and updates task tags with colors from structured form params" do

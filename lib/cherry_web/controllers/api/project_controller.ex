@@ -44,7 +44,7 @@ defmodule CherryWeb.Api.ProjectController do
   end
 
   def restore(conn, %{"id" => id}) do
-    project = Workspace.get_project!(id)
+    project = Workspace.get_project!(id, include_deleted: true)
 
     case Workspace.restore_project(project, actor: "api", user_id: conn.assigns.current_user.id) do
       {:ok, project} -> json(conn, %{project: project_json(project)})

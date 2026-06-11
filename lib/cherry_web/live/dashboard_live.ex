@@ -4,6 +4,8 @@ defmodule CherryWeb.DashboardLive do
   alias Cherry.Workspace
   alias CherryWeb.Markdown
 
+  @deleted_retention_days 5
+
   def mount(_params, _session, socket) do
     {:ok,
      socket
@@ -97,6 +99,38 @@ defmodule CherryWeb.DashboardLive do
     end
   end
 
+  def handle_event("restore_deleted_project", %{"id" => id}, socket) do
+    project = Workspace.get_project!(id, include_deleted: true)
+
+    case Workspace.restore_project(project, actor: "web", user_id: socket.assigns.current_user.id) do
+      {:ok, _project} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Project restored.")
+         |> close_project_modal()
+         |> load_projects()}
+
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, "Project could not be restored.")}
+    end
+  end
+
+  def handle_event("restore_deleted_task", %{"id" => id}, socket) do
+    task = Workspace.get_task!(id, include_deleted: true)
+
+    case Workspace.restore_task(task, actor: "web", user_id: socket.assigns.current_user.id) do
+      {:ok, _task} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Card restored.")
+         |> close_project_modal()
+         |> load_projects()}
+
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, "Card could not be restored.")}
+    end
+  end
+
   def handle_event("confirm_delete_project", %{"id" => id}, socket) do
     project = Workspace.get_project!(id)
 
@@ -134,6 +168,15 @@ defmodule CherryWeb.DashboardLive do
      )}
   end
 
+  def handle_event("open_modal", %{"modal" => "restore_deleted"}, socket) do
+    {:noreply,
+     assign(socket,
+       active_modal: :restore_deleted,
+       editing_project: nil,
+       deleting_project: nil
+     )}
+  end
+
   def handle_event("close_modal", _params, socket) do
     {:noreply, close_project_modal(socket)}
   end
@@ -144,9 +187,13 @@ defmodule CherryWeb.DashboardLive do
   end
 
   defp load_projects(socket) do
+    recently_deleted = Workspace.list_recently_deleted()
+
     socket
     |> assign(:projects, Workspace.list_projects())
     |> assign(:archived_projects, Workspace.list_projects(archived: true))
+    |> assign(:recently_deleted, recently_deleted)
+    |> assign(:recently_deleted_count, recovery_count(recently_deleted))
     |> assign(:search_results, nil)
   end
 
@@ -157,6 +204,19 @@ defmodule CherryWeb.DashboardLive do
       deleting_project: nil,
       project_form: project_form()
     )
+  end
+
+  defp recovery_count(%{projects: projects, tasks: tasks}),
+    do: Enum.count(projects) + Enum.count(tasks)
+
+  defp recovery_empty?(%{projects: [], tasks: []}), do: true
+  defp recovery_empty?(_recently_deleted), do: false
+
+  defp expires_on(%{deleted_at: deleted_at}) do
+    deleted_at
+    |> DateTime.add(@deleted_retention_days, :day)
+    |> DateTime.to_date()
+    |> Date.to_iso8601()
   end
 
   defp project_form(project \\ nil)
@@ -262,6 +322,29 @@ defmodule CherryWeb.DashboardLive do
         <div>
           <section>
             <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              <button
+                id="recently-deleted-card"
+                type="button"
+                class="group flex aspect-square min-h-48 flex-col justify-between rounded-xl border border-dashed border-stone-300 bg-white/65 p-5 text-left shadow-sm transition hover:-translate-y-1 hover:border-emerald-300 hover:bg-white hover:shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-300 dark:border-stone-700 dark:bg-stone-900/65 dark:hover:border-emerald-800 dark:hover:bg-stone-900"
+                phx-click="open_modal"
+                phx-value-modal="restore_deleted"
+              >
+                <span class="grid size-11 place-items-center rounded-xl bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100 transition group-hover:scale-105 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60">
+                  <.icon name="hero-arrow-path-rounded-square" class="size-5" />
+                </span>
+                <span>
+                  <span class="block text-lg font-semibold text-stone-950 dark:text-stone-50">
+                    Recently deleted
+                  </span>
+                  <span class="mt-2 block text-sm leading-6 text-stone-500 dark:text-stone-400">
+                    Restore projects and cards deleted in the last 5 days.
+                  </span>
+                </span>
+                <span class="inline-flex w-fit items-center rounded-md bg-stone-100 px-2.5 py-1 text-xs font-semibold text-stone-600 dark:bg-stone-800 dark:text-stone-300">
+                  {@recently_deleted_count} recoverable
+                </span>
+              </button>
+
               <article
                 :for={project <- @projects}
                 id={"project-card-#{project.id}"}
@@ -374,7 +457,7 @@ defmodule CherryWeb.DashboardLive do
         </section>
 
         <div
-          :if={@active_modal in [:new_project, :edit_project, :delete_project]}
+          :if={@active_modal in [:new_project, :edit_project, :delete_project, :restore_deleted]}
           id="dashboard-modal-backdrop"
           class="fixed inset-0 z-50 grid place-items-end overflow-y-auto px-2 py-2 sm:place-items-center sm:px-4 sm:py-8"
         >
@@ -399,6 +482,7 @@ defmodule CherryWeb.DashboardLive do
                           :new_project -> "hero-folder-plus"
                           :edit_project -> "hero-pencil-square"
                           :delete_project -> "hero-trash"
+                          :restore_deleted -> "hero-arrow-path-rounded-square"
                         end
                       }
                       class="size-5"
@@ -416,6 +500,8 @@ defmodule CherryWeb.DashboardLive do
                           Edit project
                         <% :delete_project -> %>
                           Delete project
+                        <% :restore_deleted -> %>
+                          Recently deleted
                       <% end %>
                     </h2>
                     <p class="mt-1 max-w-lg text-sm leading-6 text-stone-500 dark:text-stone-400">
@@ -425,7 +511,9 @@ defmodule CherryWeb.DashboardLive do
                         <% :edit_project -> %>
                           Update the project name, notes, status, and priority.
                         <% :delete_project -> %>
-                          Permanently remove this project and its tasks.
+                          Move this project to Recently deleted. It will be permanently removed after 5 days.
+                        <% :restore_deleted -> %>
+                          Restore projects and cards before they are permanently removed.
                       <% end %>
                     </p>
                   </div>
@@ -569,11 +657,11 @@ defmodule CherryWeb.DashboardLive do
             <div :if={@active_modal == :delete_project} id="delete-project-confirmation">
               <div class="max-h-[calc(100dvh-12rem)] space-y-4 overflow-y-auto p-4 sm:p-6">
                 <p class="text-sm leading-6 text-stone-600 dark:text-stone-300">
-                  This will permanently delete
+                  This will move
                   <span class="font-semibold text-stone-950 dark:text-stone-50">
                     {@deleting_project.title}
                   </span>
-                  along with its columns and tasks.
+                  to Recently deleted. You can restore it for 5 days before it is permanently removed.
                 </p>
               </div>
               <div class="flex flex-col-reverse gap-2 border-t border-stone-100 bg-stone-50/60 px-4 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-6 dark:border-stone-800 dark:bg-stone-950/40">
@@ -593,6 +681,85 @@ defmodule CherryWeb.DashboardLive do
                 >
                   Delete project
                 </button>
+              </div>
+            </div>
+
+            <div :if={@active_modal == :restore_deleted} id="restore-deleted-modal">
+              <div class="max-h-[calc(100dvh-12rem)] space-y-5 overflow-y-auto p-4 sm:p-6">
+                <div
+                  :if={recovery_empty?(@recently_deleted)}
+                  id="recently-deleted-empty"
+                  class="rounded-xl border border-dashed border-stone-300 bg-stone-50/80 p-8 text-center dark:border-stone-700 dark:bg-stone-950/60"
+                >
+                  <p class="font-medium text-stone-950 dark:text-stone-50">
+                    No recently deleted items
+                  </p>
+                  <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">
+                    Deleted projects and cards will appear here for 5 days.
+                  </p>
+                </div>
+
+                <section :if={@recently_deleted.projects != []} id="deleted-projects">
+                  <h3 class="text-xs font-semibold uppercase text-stone-500 dark:text-stone-400">
+                    Projects
+                  </h3>
+                  <div class="mt-3 space-y-2">
+                    <div
+                      :for={project <- @recently_deleted.projects}
+                      id={"deleted-project-#{project.id}"}
+                      class="flex flex-col gap-3 rounded-xl border border-stone-200 bg-white p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between dark:border-stone-700 dark:bg-stone-950"
+                    >
+                      <div class="min-w-0">
+                        <p class="break-words text-sm font-semibold text-stone-950 dark:text-stone-50">
+                          {project.title}
+                        </p>
+                        <p class="mt-1 text-xs text-stone-500 dark:text-stone-400">
+                          Project · expires {expires_on(project)}
+                        </p>
+                      </div>
+                      <button
+                        id={"restore-deleted-project-#{project.id}"}
+                        type="button"
+                        class="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-700 px-3 py-2 text-sm font-semibold text-white shadow-sm shadow-emerald-900/20 transition hover:-translate-y-0.5 hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                        phx-click="restore_deleted_project"
+                        phx-value-id={project.id}
+                      >
+                        <.icon name="hero-arrow-uturn-left" class="size-4" /> Restore
+                      </button>
+                    </div>
+                  </div>
+                </section>
+
+                <section :if={@recently_deleted.tasks != []} id="deleted-tasks">
+                  <h3 class="text-xs font-semibold uppercase text-stone-500 dark:text-stone-400">
+                    Cards
+                  </h3>
+                  <div class="mt-3 space-y-2">
+                    <div
+                      :for={task <- @recently_deleted.tasks}
+                      id={"deleted-task-#{task.id}"}
+                      class="flex flex-col gap-3 rounded-xl border border-stone-200 bg-white p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between dark:border-stone-700 dark:bg-stone-950"
+                    >
+                      <div class="min-w-0">
+                        <p class="break-words text-sm font-semibold text-stone-950 dark:text-stone-50">
+                          {task.title}
+                        </p>
+                        <p class="mt-1 text-xs text-stone-500 dark:text-stone-400">
+                          Card · {task.project.title} · {task.column.name} · expires {expires_on(task)}
+                        </p>
+                      </div>
+                      <button
+                        id={"restore-deleted-task-#{task.id}"}
+                        type="button"
+                        class="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-700 px-3 py-2 text-sm font-semibold text-white shadow-sm shadow-emerald-900/20 transition hover:-translate-y-0.5 hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                        phx-click="restore_deleted_task"
+                        phx-value-id={task.id}
+                      >
+                        <.icon name="hero-arrow-uturn-left" class="size-4" /> Restore
+                      </button>
+                    </div>
+                  </div>
+                </section>
               </div>
             </div>
           </section>

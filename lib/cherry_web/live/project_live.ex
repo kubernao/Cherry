@@ -218,12 +218,13 @@ defmodule CherryWeb.ProjectLive do
     move_task(socket, task, column_id, position)
   end
 
-  def handle_event("archive_task", %{"id" => id}, socket) do
+  def handle_event("delete_task", %{"id" => id}, socket) do
     {:ok, _task} =
       Workspace.get_task!(id)
-      |> Workspace.archive_task(actor: "web", user_id: socket.assigns.current_user.id)
+      |> Workspace.delete_task(actor: "web", user_id: socket.assigns.current_user.id)
 
-    {:noreply, load_board(socket)}
+    {:noreply,
+     socket |> put_flash(:info, "Card deleted. Restore it from Recently deleted.") |> load_board()}
   end
 
   defp move_task(socket, task, column_id, position) do
@@ -591,9 +592,9 @@ defmodule CherryWeb.ProjectLive do
                       type="button"
                       data-no-drag
                       class="rounded-md p-1.5 text-stone-400 transition hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/50 dark:hover:text-rose-300"
-                      phx-click="archive_task"
+                      phx-click="delete_task"
                       phx-value-id={task.id}
-                      aria-label={"Archive #{task.title}"}
+                      aria-label={"Delete #{task.title}"}
                     >
                       <.icon name="hero-trash" class="size-4" />
                     </button>
