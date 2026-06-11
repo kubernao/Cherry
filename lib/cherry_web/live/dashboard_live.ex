@@ -322,29 +322,6 @@ defmodule CherryWeb.DashboardLive do
         <div>
           <section>
             <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              <button
-                id="recently-deleted-card"
-                type="button"
-                class="group flex aspect-square min-h-48 flex-col justify-between rounded-xl border border-dashed border-stone-300 bg-white/65 p-5 text-left shadow-sm transition hover:-translate-y-1 hover:border-emerald-300 hover:bg-white hover:shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-300 dark:border-stone-700 dark:bg-stone-900/65 dark:hover:border-emerald-800 dark:hover:bg-stone-900"
-                phx-click="open_modal"
-                phx-value-modal="restore_deleted"
-              >
-                <span class="grid size-11 place-items-center rounded-xl bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100 transition group-hover:scale-105 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60">
-                  <.icon name="hero-arrow-path-rounded-square" class="size-5" />
-                </span>
-                <span>
-                  <span class="block text-lg font-semibold text-stone-950 dark:text-stone-50">
-                    Recently deleted
-                  </span>
-                  <span class="mt-2 block text-sm leading-6 text-stone-500 dark:text-stone-400">
-                    Restore projects and cards deleted in the last 5 days.
-                  </span>
-                </span>
-                <span class="inline-flex w-fit items-center rounded-md bg-stone-100 px-2.5 py-1 text-xs font-semibold text-stone-600 dark:bg-stone-800 dark:text-stone-300">
-                  {@recently_deleted_count} recoverable
-                </span>
-              </button>
-
               <article
                 :for={project <- @projects}
                 id={"project-card-#{project.id}"}
@@ -397,6 +374,34 @@ defmodule CherryWeb.DashboardLive do
                   </button>
                 </div>
               </article>
+
+              <button
+                id="recently-deleted-card"
+                type="button"
+                class="group flex min-h-40 flex-col justify-between rounded-xl border border-dashed border-stone-300 bg-white/65 p-4 text-left shadow-sm transition hover:-translate-y-1 hover:border-emerald-300 hover:bg-white hover:shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-300 md:col-start-2 xl:col-start-3 dark:border-stone-700 dark:bg-stone-900/65 dark:hover:border-emerald-800 dark:hover:bg-stone-900"
+                phx-click="open_modal"
+                phx-value-modal="restore_deleted"
+              >
+                <span class="flex items-start justify-between gap-3">
+                  <span>
+                    <span class="block font-semibold text-stone-950 transition group-hover:text-emerald-700 dark:text-stone-50 dark:group-hover:text-emerald-300">
+                      Recently deleted
+                    </span>
+                    <span class="mt-3 block text-xs font-semibold uppercase text-stone-500 dark:text-stone-400">
+                      Restore window
+                    </span>
+                  </span>
+                  <span class="grid size-9 shrink-0 place-items-center rounded-lg bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100 transition group-hover:scale-105 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60">
+                    <.icon name="hero-arrow-path-rounded-square" class="size-4" />
+                  </span>
+                </span>
+                <span class="mt-4 block text-sm leading-6 text-stone-500 dark:text-stone-400">
+                  Restore projects and cards deleted in the last 5 days.
+                </span>
+                <span class="mt-4 inline-flex w-fit items-center rounded-md bg-stone-100 px-2.5 py-1 text-xs font-semibold text-stone-600 dark:bg-stone-800 dark:text-stone-300">
+                  {@recently_deleted_count} recoverable
+                </span>
+              </button>
             </div>
 
             <div
